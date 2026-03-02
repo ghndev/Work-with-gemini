@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Stage, Layer, Image as KonvaImage, Group } from 'react-konva';
-import { PieceData } from '../utils/puzzleGenerator';
-import { playClick, playSnap, getMuted, setMuted } from '../utils/audio';
+import { PieceData } from '@/utils/puzzleGenerator';
+import { playClick, playSnap, getMuted, setMuted } from '@/utils/audio';
 import confetti from 'canvas-confetti';
 import { LayoutGrid, Image as ImageIcon, Frame, Volume2, VolumeX, ZoomIn, ZoomOut } from 'lucide-react';
 
