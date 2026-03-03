@@ -5,7 +5,7 @@ import { auth } from '@/auth';
 export default async function Page() {
   const session = await auth();
 
-  console.log(session?.user?.name)
+  console.log(session?.user?.id)
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100 relative">
