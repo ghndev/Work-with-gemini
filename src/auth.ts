@@ -28,6 +28,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           .where(eq(users.email, email))
           .limit(1);
 
+        console.log(user.id)
+
         if (!user || !user.password) {
           return null;
         }
@@ -45,4 +47,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token?.id) {
+        session.user.id = token.id as string;
+      }
+      return session;
+    }
+  }
 })

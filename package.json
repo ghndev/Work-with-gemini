@@ -16,6 +16,7 @@
     "@neondatabase/serverless": "^1.0.2",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/canvas-confetti": "^1.9.0",
+    "@uploadthing/react": "^7.3.3",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.4.1",
     "canvas-confetti": "^1.9.4",
@@ -31,6 +32,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-konva": "^19.2.2",
+    "uploadthing": "^7.7.4",
     "zod": "^4.3.6"
   },
   "devDependencies": {
