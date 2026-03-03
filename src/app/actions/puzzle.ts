@@ -1,4 +1,4 @@
-"use server";
+'use server';
 
 import { GoogleGenAI } from '@google/genai';
 
@@ -24,7 +24,7 @@ export async function generatePuzzleImage(prompt: string) {
 
     return { success: true, imageUrl };
   } catch (error: any) {
-    console.error("Error generating puzzle image:", error);
+    console.error('Error generating puzzle image:', error);
     return { success: false, error: error.message || 'An error occurred' };
   }
 }

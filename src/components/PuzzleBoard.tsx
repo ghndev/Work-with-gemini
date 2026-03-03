@@ -3,7 +3,15 @@ import { Stage, Layer, Image as KonvaImage, Group } from 'react-konva';
 import { PieceData } from '@/utils/puzzleGenerator';
 import { playClick, playSnap, getMuted, setMuted } from '@/utils/audio';
 import confetti from 'canvas-confetti';
-import { LayoutGrid, Image as ImageIcon, Frame, Volume2, VolumeX, ZoomIn, ZoomOut } from 'lucide-react';
+import {
+  LayoutGrid,
+  Image as ImageIcon,
+  Frame,
+  Volume2,
+  VolumeX,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 
 interface PuzzleBoardProps {
   initialPieces: PieceData[];
@@ -13,20 +21,34 @@ interface PuzzleBoardProps {
 
 const SNAP_THRESHOLD = 30;
 
-export default function PuzzleBoard({ initialPieces, onComplete, onChange }: PuzzleBoardProps) {
+export default function PuzzleBoard({
+  initialPieces,
+  onComplete,
+  onChange,
+}: PuzzleBoardProps) {
   const [pieces, setPieces] = useState<PieceData[]>(initialPieces);
   const [showBorderOnly, setShowBorderOnly] = useState(false);
   const [isMuted, setIsMuted] = useState(getMuted());
-  
-  const maxRow = useMemo(() => Math.max(...initialPieces.map(p => p.row)), [initialPieces]);
-  const maxCol = useMemo(() => Math.max(...initialPieces.map(p => p.col)), [initialPieces]);
-  const isEdge = (p: PieceData) => p.row === 0 || p.row === maxRow || p.col === 0 || p.col === maxCol;
+
+  const maxRow = useMemo(
+    () => Math.max(...initialPieces.map((p) => p.row)),
+    [initialPieces],
+  );
+  const maxCol = useMemo(
+    () => Math.max(...initialPieces.map((p) => p.col)),
+    [initialPieces],
+  );
+  const isEdge = (p: PieceData) =>
+    p.row === 0 || p.row === maxRow || p.col === 0 || p.col === maxCol;
 
   const [stagePos, setStagePos] = useState(() => {
     // Calculate bounding box of initial pieces to center them
     if (initialPieces.length === 0) return { x: 0, y: 0 };
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    initialPieces.forEach(p => {
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    initialPieces.forEach((p) => {
       if (p.x < minX) minX = p.x;
       if (p.y < minY) minY = p.y;
       if (p.x > maxX) maxX = p.x;
@@ -39,24 +61,24 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
     const h = typeof window !== 'undefined' ? window.innerHeight : 768;
     return {
       x: w / 2 - cx,
-      y: h / 2 - cy
+      y: h / 2 - cy,
     };
   });
   const [stageScale, setStageScale] = useState(1);
   const stageRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ 
-    width: typeof window !== 'undefined' ? window.innerWidth : 1024, 
-    height: typeof window !== 'undefined' ? window.innerHeight : 768 
+  const [dimensions, setDimensions] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1024,
+    height: typeof window !== 'undefined' ? window.innerHeight : 768,
   });
-  const lastCenter = useRef<{x: number, y: number} | null>(null);
+  const lastCenter = useRef<{ x: number; y: number } | null>(null);
   const lastDist = useRef<number>(0);
 
   useEffect(() => {
     const handleResize = () => {
       setDimensions({
         width: window.innerWidth,
-        height: window.innerHeight
+        height: window.innerHeight,
       });
     };
     window.addEventListener('resize', handleResize);
@@ -76,7 +98,7 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
     };
 
     const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
-    
+
     if (newScale < 0.1 || newScale > 5) return;
 
     setStageScale(newScale);
@@ -100,7 +122,9 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
       const p1 = { x: touch1.clientX, y: touch1.clientY };
       const p2 = { x: touch2.clientX, y: touch2.clientY };
 
-      const dist = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+      const dist = Math.sqrt(
+        Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2),
+      );
       const center = {
         x: (p1.x + p2.x) / 2,
         y: (p1.y + p2.y) / 2,
@@ -115,7 +139,7 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
       const oldScale = stage.scaleX();
       const scaleBy = dist / lastDist.current;
       let newScale = oldScale * scaleBy;
-      
+
       if (newScale < 0.1) newScale = 0.1;
       if (newScale > 5) newScale = 5;
 
@@ -125,8 +149,14 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
       };
 
       const newPos = {
-        x: center.x - mousePointTo.x * newScale + (center.x - lastCenter.current.x),
-        y: center.y - mousePointTo.y * newScale + (center.y - lastCenter.current.y),
+        x:
+          center.x -
+          mousePointTo.x * newScale +
+          (center.x - lastCenter.current.x),
+        y:
+          center.y -
+          mousePointTo.y * newScale +
+          (center.y - lastCenter.current.y),
       };
 
       setStageScale(newScale);
@@ -145,15 +175,15 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
   const handleDragStart = (e: any) => {
     playClick();
     const id = e.target.id();
-    const piece = pieces.find(p => p.groupId === id);
+    const piece = pieces.find((p) => p.groupId === id);
     if (!piece) return;
 
     // Move dragged group to the end of the array so it renders on top
     const newPieces = [...pieces];
-    const groupPieces = newPieces.filter(p => p.groupId === id);
-    const otherPieces = newPieces.filter(p => p.groupId !== id);
+    const groupPieces = newPieces.filter((p) => p.groupId === id);
+    const otherPieces = newPieces.filter((p) => p.groupId !== id);
     const reorderedPieces = [...otherPieces, ...groupPieces];
-    
+
     setPieces(reorderedPieces);
     if (onChange) onChange(reorderedPieces);
   };
@@ -161,25 +191,26 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
   const handleDragEnd = (e: any) => {
     const groupId = e.target.id();
     const groupNode = e.target;
-    
+
     const newOffsetX = groupNode.x();
     const newOffsetY = groupNode.y();
 
     let snapped = false;
     let newPieces = [...pieces];
-    
+
     // Update the pieces in this group with their new absolute positions
     // Actually, we just need to check if this group's offset is close to any other group's offset
     // Wait, the pieces in the group have correctX, correctY.
     // The group itself is at (newOffsetX, newOffsetY).
     // So the absolute position of a piece in this group is correctX + newOffsetX.
-    
-    const draggedGroupPieces = newPieces.filter(p => p.groupId === groupId);
-    const otherPieces = newPieces.filter(p => p.groupId !== groupId);
+
+    const draggedGroupPieces = newPieces.filter((p) => p.groupId === groupId);
+    const otherPieces = newPieces.filter((p) => p.groupId !== groupId);
 
     for (const dp of draggedGroupPieces) {
       for (const op of otherPieces) {
-        const isAdjacent = Math.abs(dp.col - op.col) + Math.abs(dp.row - op.row) === 1;
+        const isAdjacent =
+          Math.abs(dp.col - op.col) + Math.abs(dp.row - op.row) === 1;
         if (!isAdjacent) continue;
 
         // op's absolute position is op.x, op.y
@@ -187,20 +218,23 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
         const opOffsetX = op.x - op.correctX;
         const opOffsetY = op.y - op.correctY;
 
-        const dist = Math.sqrt(Math.pow(newOffsetX - opOffsetX, 2) + Math.pow(newOffsetY - opOffsetY, 2));
+        const dist = Math.sqrt(
+          Math.pow(newOffsetX - opOffsetX, 2) +
+            Math.pow(newOffsetY - opOffsetY, 2),
+        );
 
         if (dist < SNAP_THRESHOLD) {
           snapped = true;
           playSnap();
-          
+
           const targetGroupId = op.groupId;
-          newPieces = newPieces.map(p => {
+          newPieces = newPieces.map((p) => {
             if (p.groupId === groupId) {
               return {
                 ...p,
                 x: p.correctX + opOffsetX,
                 y: p.correctY + opOffsetY,
-                groupId: targetGroupId
+                groupId: targetGroupId,
               };
             }
             return p;
@@ -213,12 +247,12 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
 
     if (!snapped) {
       // Just update the x,y of the pieces in the dragged group
-      newPieces = newPieces.map(p => {
+      newPieces = newPieces.map((p) => {
         if (p.groupId === groupId) {
           return {
             ...p,
             x: p.correctX + newOffsetX,
-            y: p.correctY + newOffsetY
+            y: p.correctY + newOffsetY,
           };
         }
         return p;
@@ -230,7 +264,7 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
 
     if (snapped) {
       const firstGroupId = newPieces[0].groupId;
-      if (newPieces.every(p => p.groupId === firstGroupId)) {
+      if (newPieces.every((p) => p.groupId === firstGroupId)) {
         confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
         onComplete();
       }
@@ -249,11 +283,11 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
   const handleSort = () => {
     playClick();
     const groupCounts = new Map<string, number>();
-    pieces.forEach(p => {
+    pieces.forEach((p) => {
       groupCounts.set(p.groupId, (groupCounts.get(p.groupId) || 0) + 1);
     });
 
-    const loosePieces = pieces.filter(p => groupCounts.get(p.groupId) === 1);
+    const loosePieces = pieces.filter((p) => groupCounts.get(p.groupId) === 1);
     if (loosePieces.length === 0) return;
 
     // Sort loose pieces: edges first, then random
@@ -268,7 +302,7 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
     const viewX = -stage.x() / stage.scaleX();
     const viewY = -stage.y() / stage.scaleY();
     const viewW = dimensions.width / stage.scaleX();
-    
+
     const pieceW = loosePieces[0].width;
     const pieceH = loosePieces[0].height;
     const padding = 20;
@@ -279,13 +313,13 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
     const startX = viewX + 50;
     const startY = viewY + 50;
 
-    const targetPositions = new Map<string, {x: number, y: number}>();
+    const targetPositions = new Map<string, { x: number; y: number }>();
     let r = 0;
     let c = 0;
-    loosePieces.forEach(p => {
+    loosePieces.forEach((p) => {
       targetPositions.set(p.id, {
         x: startX + c * (pieceW + padding),
-        y: startY + r * (pieceH + padding)
+        y: startY + r * (pieceH + padding),
       });
       c++;
       if (c >= cols) {
@@ -294,14 +328,14 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
       }
     });
 
-    const newPieces = pieces.map(p => {
+    const newPieces = pieces.map((p) => {
       if (targetPositions.has(p.id)) {
         const target = targetPositions.get(p.id)!;
         return { ...p, x: target.x, y: target.y };
       }
       return p;
     });
-    
+
     setPieces(newPieces);
     if (onChange) onChange(newPieces);
   };
@@ -314,7 +348,7 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
     const oldScale = stage.scaleX();
     const scaleBy = 1.2;
     let newScale = direction === 'in' ? oldScale * scaleBy : oldScale / scaleBy;
-    
+
     if (newScale < 0.1) newScale = 0.1;
     if (newScale > 5) newScale = 5;
 
@@ -339,7 +373,10 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
   };
 
   return (
-    <div ref={containerRef} className="w-full h-full bg-zinc-950 overflow-hidden relative touch-none">
+    <div
+      ref={containerRef}
+      className="relative h-full w-full touch-none overflow-hidden bg-zinc-950"
+    >
       <Stage
         width={dimensions.width}
         height={dimensions.height}
@@ -398,48 +435,61 @@ export default function PuzzleBoard({ initialPieces, onComplete, onChange }: Puz
           })}
         </Layer>
       </Stage>
-      <div className="absolute top-6 right-6 flex sm:hidden flex-col gap-2 z-10">
+      <div className="absolute top-6 right-6 z-10 flex flex-col gap-2 sm:hidden">
         <button
           onClick={() => handleZoom('in')}
-          className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-2xl transition-colors flex items-center justify-center shadow-lg border border-white/10"
+          className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/10 p-3 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-white/20"
           title="Zoom In"
         >
-          <ZoomIn className="w-5 h-5" />
+          <ZoomIn className="h-5 w-5" />
         </button>
         <button
           onClick={() => handleZoom('out')}
-          className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-2xl transition-colors flex items-center justify-center shadow-lg border border-white/10"
+          className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/10 p-3 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-white/20"
           title="Zoom Out"
         >
-          <ZoomOut className="w-5 h-5" />
+          <ZoomOut className="h-5 w-5" />
         </button>
       </div>
-      <div className="absolute bottom-6 right-6 flex gap-2 sm:gap-3 z-10">
+      <div className="absolute right-6 bottom-6 z-10 flex gap-2 sm:gap-3">
         <button
           onClick={() => {
             const newMuted = !isMuted;
             setIsMuted(newMuted);
             setMuted(newMuted);
           }}
-          className="p-3 sm:px-4 sm:py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-2xl transition-colors flex items-center justify-center gap-2 font-medium shadow-lg border border-white/10"
-          title={isMuted ? "Unmute" : "Mute"}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 p-3 font-medium text-white shadow-lg backdrop-blur-md transition-colors hover:bg-white/20 sm:px-4 sm:py-3"
+          title={isMuted ? 'Unmute' : 'Mute'}
         >
-          {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          {isMuted ? (
+            <VolumeX className="h-5 w-5" />
+          ) : (
+            <Volume2 className="h-5 w-5" />
+          )}
         </button>
         <button
-          onClick={() => { playClick(); setShowBorderOnly(!showBorderOnly); }}
-          className="p-3 sm:px-4 sm:py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-2xl transition-colors flex items-center justify-center gap-2 font-medium shadow-lg border border-white/10"
+          onClick={() => {
+            playClick();
+            setShowBorderOnly(!showBorderOnly);
+          }}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 p-3 font-medium text-white shadow-lg backdrop-blur-md transition-colors hover:bg-white/20 sm:px-4 sm:py-3"
           title={showBorderOnly ? 'Show All Pieces' : 'Border Pieces Only'}
         >
-          {showBorderOnly ? <ImageIcon className="w-5 h-5" /> : <Frame className="w-5 h-5" />}
-          <span className="hidden sm:inline">{showBorderOnly ? 'Show All Pieces' : 'Border Pieces Only'}</span>
+          {showBorderOnly ? (
+            <ImageIcon className="h-5 w-5" />
+          ) : (
+            <Frame className="h-5 w-5" />
+          )}
+          <span className="hidden sm:inline">
+            {showBorderOnly ? 'Show All Pieces' : 'Border Pieces Only'}
+          </span>
         </button>
         <button
           onClick={handleSort}
-          className="p-3 sm:px-4 sm:py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-2xl transition-colors flex items-center justify-center gap-2 font-medium shadow-lg border border-white/10"
+          className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 p-3 font-medium text-white shadow-lg backdrop-blur-md transition-colors hover:bg-white/20 sm:px-4 sm:py-3"
           title="Sort Pieces"
         >
-          <LayoutGrid className="w-5 h-5" />
+          <LayoutGrid className="h-5 w-5" />
           <span className="hidden sm:inline">Sort Pieces</span>
         </button>
       </div>

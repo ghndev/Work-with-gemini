@@ -1,6 +1,6 @@
-import { auth, signOut } from "@/auth";
-import Link from "next/link";
-import { LogOut, User } from "lucide-react";
+import { auth, signOut } from '@/auth';
+import Link from 'next/link';
+import { LogOut, User } from 'lucide-react';
 
 export default async function UserMenu() {
   const session = await auth();
@@ -8,20 +8,20 @@ export default async function UserMenu() {
   if (session?.user) {
     return (
       <div className="flex items-center gap-4">
-        <div className="text-sm text-zinc-400 hidden sm:block">
+        <div className="hidden text-sm text-zinc-400 sm:block">
           {session.user.email}
         </div>
         <form
           action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/" });
+            'use server';
+            await signOut({ redirectTo: '/' });
           }}
         >
           <button
             type="submit"
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 rounded-full transition-colors"
+            className="flex items-center gap-2 rounded-full bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="h-4 w-4" />
             Sign Out
           </button>
         </form>
@@ -32,9 +32,9 @@ export default async function UserMenu() {
   return (
     <Link
       href="/login"
-      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-900 bg-white hover:bg-zinc-200 rounded-full transition-colors"
+      className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-200"
     >
-      <User className="w-4 h-4" />
+      <User className="h-4 w-4" />
       Sign In
     </Link>
   );

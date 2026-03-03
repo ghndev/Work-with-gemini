@@ -1,10 +1,10 @@
-import NextAuth from "next-auth"
-import Credentials from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
-import { eq } from "drizzle-orm"
-import { db } from "./index" 
-import { users } from "./db/schema" 
-import { signInSchema } from "./lib/zod"
+import NextAuth from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
+import bcrypt from 'bcryptjs';
+import { eq } from 'drizzle-orm';
+import { db } from './index';
+import { users } from './db/schema';
+import { signInSchema } from './lib/zod';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -14,7 +14,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: {},
       },
       authorize: async (credentials) => {
-        const parsedCredentials = await signInSchema.safeParseAsync(credentials);
+        const parsedCredentials =
+          await signInSchema.safeParseAsync(credentials);
 
         if (!parsedCredentials.success) {
           return null;
@@ -27,7 +28,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           .from(users)
           .where(eq(users.email, email))
           .limit(1);
-
 
         if (!user || !user.password) {
           return null;
@@ -58,6 +58,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.id as string;
       }
       return session;
-    }
-  }
-})
+    },
+  },
+});

@@ -51,7 +51,13 @@ function createRandomEdge(): Edge {
   };
 }
 
-function drawEdge(ctx: CanvasRenderingContext2D, L: number, edge: Edge | null, sign: number, reverse: boolean) {
+function drawEdge(
+  ctx: CanvasRenderingContext2D,
+  L: number,
+  edge: Edge | null,
+  sign: number,
+  reverse: boolean,
+) {
   if (!edge) {
     ctx.lineTo(L, 0);
     ctx.translate(L, 0);
@@ -71,23 +77,33 @@ function drawEdge(ctx: CanvasRenderingContext2D, L: number, edge: Edge | null, s
 
   ctx.lineTo(center - neck, 0);
   ctx.bezierCurveTo(
-    center - neck, depth / 2,
-    center - headLeft, depth,
-    tipX, depth
+    center - neck,
+    depth / 2,
+    center - headLeft,
+    depth,
+    tipX,
+    depth,
   );
   ctx.bezierCurveTo(
-    center + headRight, depth,
-    center + neck, depth / 2,
-    center + neck, 0
+    center + headRight,
+    depth,
+    center + neck,
+    depth / 2,
+    center + neck,
+    0,
   );
   ctx.lineTo(L, 0);
   ctx.translate(L, 0);
 }
 
-export async function createPuzzleState(imageUrl: string, cols: number, rows: number): Promise<PuzzleState> {
+export async function createPuzzleState(
+  imageUrl: string,
+  cols: number,
+  rows: number,
+): Promise<PuzzleState> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    img.crossOrigin = 'anonymous';
     img.onload = () => {
       const hConnections: Edge[][] = [];
       for (let r = 0; r < rows - 1; r++) {
@@ -111,14 +127,14 @@ export async function createPuzzleState(imageUrl: string, cols: number, rows: nu
       const h = img.height / rows;
       const spacingX = w * 1.5;
       const spacingY = h * 1.5;
-      
-      const positions: {x: number, y: number}[] = [];
+
+      const positions: { x: number; y: number }[] = [];
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           positions.push({ x: c * spacingX, y: r * spacingY });
         }
       }
-      
+
       for (let i = positions.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [positions[i], positions[j]] = [positions[j], positions[i]];
@@ -136,7 +152,7 @@ export async function createPuzzleState(imageUrl: string, cols: number, rows: nu
             x: pos.x,
             y: pos.y,
             col: c,
-            row: r
+            row: r,
           });
         }
       }
@@ -147,7 +163,7 @@ export async function createPuzzleState(imageUrl: string, cols: number, rows: nu
         rows,
         hConnections,
         vConnections,
-        pieces
+        pieces,
       });
     };
     img.onerror = reject;
@@ -155,10 +171,12 @@ export async function createPuzzleState(imageUrl: string, cols: number, rows: nu
   });
 }
 
-export async function renderPuzzlePieces(state: PuzzleState): Promise<PieceData[]> {
+export async function renderPuzzlePieces(
+  state: PuzzleState,
+): Promise<PieceData[]> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    img.crossOrigin = 'anonymous';
     img.onload = () => {
       const pieces: PieceData[] = [];
       const { cols, rows, hConnections, vConnections } = state;
@@ -216,7 +234,7 @@ export async function renderPuzzlePieces(state: PuzzleState): Promise<PieceData[
           padding,
           canvas,
           col: c,
-          row: r
+          row: r,
         });
       }
       resolve(pieces);
