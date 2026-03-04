@@ -296,7 +296,12 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
                     {diffKey}
                   </h3>
                   <span className="text-sm text-zinc-500">
-                    ({getEstimatedPieceCount(DIFFICULTY_SETTINGS[diffKey].pieces, '4:3')} pieces)
+                    (
+                    {getEstimatedPieceCount(
+                      DIFFICULTY_SETTINGS[diffKey].pieces,
+                      '4:3',
+                    )}{' '}
+                    pieces)
                   </span>
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -304,7 +309,7 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
                     <button
                       key={preset.id}
                       onClick={() => handlePresetSelect(preset.url, diffKey)}
-                      className="group relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-zinc-800 transition-all hover:border-zinc-500"
+                      className="group relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-zinc-800 transition-all hover:border-zinc-500"
                     >
                       <img
                         src={preset.url}
@@ -410,66 +415,75 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
                   <Settings2 className="h-4 w-4" />
                   <span>Puzzle Settings</span>
                 </div>
-                <span className="text-zinc-500 text-xs">
-                  {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} • {aspectRatio}
+                <span className="text-xs text-zinc-500">
+                  {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} •{' '}
+                  {aspectRatio}
                 </span>
               </button>
 
               {showSettings && (
                 <div className="space-y-4 border-t border-zinc-800 bg-zinc-900/30 p-4">
                   <div className="space-y-2">
-                  <label className="text-xs font-medium text-zinc-500">Aspect Ratio</label>
-                  <div className="flex rounded-full border border-zinc-800 bg-zinc-900 p-1.5">
-                    {[
-                      { value: '1:1', label: 'Square (1:1)' },
-                      { value: '16:9', label: '16:9 Wide' },
-                      { value: '9:16', label: '9:16 Tall' },
-                    ].map((ratio) => (
-                      <button
-                        key={ratio.value}
-                        onClick={() => setAspectRatio(ratio.value)}
-                        disabled={!isLoggedIn}
-                        className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
-                          aspectRatio === ratio.value
-                            ? 'bg-zinc-700 text-white shadow-sm'
-                            : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
-                        }`}
-                      >
-                        {ratio.label}
-                      </button>
-                    ))}
+                    <label className="text-xs font-medium text-zinc-500">
+                      Aspect Ratio
+                    </label>
+                    <div className="flex rounded-full border border-zinc-800 bg-zinc-900 p-1.5">
+                      {[
+                        { value: '1:1', label: 'Square (1:1)' },
+                        { value: '16:9', label: '16:9 Wide' },
+                        { value: '9:16', label: '9:16 Tall' },
+                      ].map((ratio) => (
+                        <button
+                          key={ratio.value}
+                          onClick={() => setAspectRatio(ratio.value)}
+                          disabled={!isLoggedIn}
+                          className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                            aspectRatio === ratio.value
+                              ? 'bg-zinc-700 text-white shadow-sm'
+                              : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                          }`}
+                        >
+                          {ratio.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-zinc-500">Difficulty</label>
-                  <div className="flex rounded-full border border-zinc-800 bg-zinc-900 p-1.5">
-                    {(
-                      Object.entries(DIFFICULTY_SETTINGS) as [
-                        Difficulty,
-                        (typeof DIFFICULTY_SETTINGS)[Difficulty],
-                      ][]
-                    ).map(([key, setting]) => (
-                      <button
-                        key={key}
-                        onClick={() => setDifficulty(key)}
-                        disabled={!isLoggedIn}
-                        className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
-                          difficulty === key
-                            ? 'bg-zinc-700 text-white shadow-sm'
-                            : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
-                        }`}
-                      >
-                        <span>{setting.label}</span>
-                        <span className="hidden text-xs font-normal opacity-60 sm:inline">
-                          {getEstimatedPieceCount(setting.pieces, aspectRatio)} pcs
-                        </span>
-                      </button>
-                    ))}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-zinc-500">
+                      Difficulty
+                    </label>
+                    <div className="flex rounded-full border border-zinc-800 bg-zinc-900 p-1.5">
+                      {(
+                        Object.entries(DIFFICULTY_SETTINGS) as [
+                          Difficulty,
+                          (typeof DIFFICULTY_SETTINGS)[Difficulty],
+                        ][]
+                      ).map(([key, setting]) => (
+                        <button
+                          key={key}
+                          onClick={() => setDifficulty(key)}
+                          disabled={!isLoggedIn}
+                          className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                            difficulty === key
+                              ? 'bg-zinc-700 text-white shadow-sm'
+                              : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                          }`}
+                        >
+                          <span>{setting.label}</span>
+                          <span className="hidden text-xs font-normal opacity-60 sm:inline">
+                            {getEstimatedPieceCount(
+                              setting.pieces,
+                              aspectRatio,
+                            )}{' '}
+                            pcs
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
