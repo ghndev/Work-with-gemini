@@ -180,9 +180,20 @@ export async function renderPuzzlePieces(
     img.onload = () => {
       const pieces: PieceData[] = [];
       const { cols, rows, hConnections, vConnections } = state;
-      const w = img.width / cols;
-      const h = img.height / rows;
-      const padding = Math.max(w, h) * 0.25;
+
+      // To guarantee perfectly square pieces, calculate the required piece size based on minimum dimension crop
+      // We must use Math.min so the calculated puzzle grid is ALWAYS smaller than or equal to the photo's boundaries.
+      const pieceSize = Math.min(img.width / cols, img.height / rows);
+      const w = pieceSize;
+      const h = pieceSize;
+
+      // We need to crop the original image to visually fit the exact cols * rows * pieceSize ratio
+      const cropWidth = w * cols;
+      const cropHeight = h * rows;
+      const sourceX = (img.width - cropWidth) / 2;
+      const sourceY = (img.height - cropHeight) / 2;
+
+      const padding = pieceSize * 0.25;
 
       for (const pState of state.pieces) {
         const { r, c } = { r: pState.row, c: pState.col };
@@ -213,7 +224,13 @@ export async function renderPuzzlePieces(
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clip();
 
-        ctx.drawImage(img, -c * w + padding, -r * h + padding);
+        // Draw the full image shifted backwards. The clip() path has tabs extending into the padding area,
+        // so we must draw the entire surrounding region of the image, not just a w*h bounding box!
+        ctx.drawImage(
+          img,
+          padding - sourceX - c * w,
+          padding - sourceY - r * h,
+        );
 
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.lineWidth = 2;

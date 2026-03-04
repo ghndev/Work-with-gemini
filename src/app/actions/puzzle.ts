@@ -2,13 +2,23 @@
 
 import { GoogleGenAI } from '@google/genai';
 
-export async function generatePuzzleImage(prompt: string) {
+export async function generatePuzzleImage(
+  prompt: string,
+  aspectRatio: string = '1:1',
+) {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.MY_GEMINI_API_KEY });
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-3.1-flash-image-preview',
       contents: {
         parts: [{ text: prompt }],
+      },
+      config: {
+        responseModalities: ['IMAGE'],
+        imageConfig: {
+          aspectRatio: aspectRatio,
+          imageSize: '1K',
+        },
       },
     });
 

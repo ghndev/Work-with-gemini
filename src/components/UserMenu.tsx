@@ -1,6 +1,7 @@
 import { auth, signOut } from '@/auth';
 import Link from 'next/link';
 import { LogOut, User } from 'lucide-react';
+import { SubmitButton } from '@/components/SubmitButton';
 
 export default async function UserMenu() {
   const session = await auth();
@@ -17,13 +18,14 @@ export default async function UserMenu() {
             await signOut({ redirectTo: '/' });
           }}
         >
-          <button
+          <SubmitButton
             type="submit"
+            pendingText="Signing out..."
             className="flex items-center gap-2 rounded-full bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
           >
             <LogOut className="h-4 w-4" />
             Sign Out
-          </button>
+          </SubmitButton>
         </form>
       </div>
     );
