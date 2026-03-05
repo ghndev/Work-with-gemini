@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import Image from 'next/image';
-import { ArrowLeft, Play } from 'lucide-react';
+import { ArrowLeft, Play, Image as ImageIcon } from 'lucide-react';
 import {
   PRESET_GALLERY,
   DIFFICULTY_SETTINGS,
@@ -14,7 +15,13 @@ interface PresetGalleryProps {
 }
 
 export function PresetGallery({ show, onClose, onSelect }: PresetGalleryProps) {
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+
   if (!show) return null;
+
+  const handleImageLoad = (id: string) => {
+    setLoadedImages((prev) => ({ ...prev, [id]: true }));
+  };
 
   return (
     <div className="fixed inset-0 z-50 block overflow-y-auto bg-zinc-950">
@@ -55,16 +62,27 @@ export function PresetGallery({ show, onClose, onSelect }: PresetGalleryProps) {
                   <button
                     key={preset.id}
                     onClick={() => onSelect(preset.url, diffKey)}
-                    className="group relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-zinc-800 transition-all hover:border-zinc-500"
+                    className="group relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-800/50 transition-all hover:border-zinc-500"
                   >
+                    {/* Skeleton Loader overlay that disappears when image is loaded */}
+                    {!loadedImages[preset.id] && (
+                      <div className="absolute inset-0 z-0 flex items-center justify-center bg-zinc-800 animate-pulse">
+                        <ImageIcon className="h-8 w-8 text-zinc-600 opacity-50" />
+                      </div>
+                    )}
+                    
                     <Image
                       src={preset.url}
                       alt={preset.label}
                       fill
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      crossOrigin="anonymous"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className={`object-cover transition-transform duration-500 group-hover:scale-105 z-10 ${
+                        loadedImages[preset.id] ? 'opacity-100' : 'opacity-0'
+                      }`}
+                      onLoad={() => handleImageLoad(preset.id)}
                     />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:opacity-100">
+
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
                       <Play className="mb-2 h-10 w-10 text-white" />
                       <span className="font-medium text-white">
                         {preset.label}
