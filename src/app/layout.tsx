@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://aura-puzzles.com'), // Replace with actual URL
   title: {
     default: 'Aura Puzzles',
     template: '%s | Aura Puzzles',

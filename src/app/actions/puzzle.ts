@@ -11,6 +11,7 @@ export async function generatePuzzleImage(
   aspectRatio: string = '1:1',
 ) {
   const session = await auth();
+
   if (!session?.user) {
     return { success: false, error: 'Authentication required' };
   }
