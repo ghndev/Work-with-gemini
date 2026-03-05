@@ -427,7 +427,7 @@ export default function PuzzleBoard({
                   return (
                     <KonvaImage
                       key={piece.id}
-                      image={piece.canvas}
+                      image={piece.image}
                       x={piece.correctX}
                       y={piece.correctY}
                       offsetX={piece.padding}

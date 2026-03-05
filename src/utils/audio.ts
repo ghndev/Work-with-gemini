@@ -49,7 +49,10 @@ function playSound(
   try {
     const ctx = getAudioCtx();
     if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
+    
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch((e) => console.warn('Audio resume blocked:', e));
+    }
 
     const osc = ctx.createOscillator();
     const gainNode = ctx.createGain();

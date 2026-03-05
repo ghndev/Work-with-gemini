@@ -8,7 +8,7 @@ export interface PieceData {
   width: number;
   height: number;
   padding: number;
-  canvas: HTMLCanvasElement;
+  image: ImageBitmap | HTMLCanvasElement;
   col: number;
   row: number;
 }
@@ -105,68 +105,75 @@ export async function createPuzzleState(
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      const hConnections: Edge[][] = [];
-      for (let r = 0; r < rows - 1; r++) {
-        const row = [];
-        for (let c = 0; c < cols; c++) {
-          row.push(createRandomEdge());
+      try {
+        const hConnections: Edge[][] = [];
+        for (let r = 0; r < rows - 1; r++) {
+          const row = [];
+          for (let c = 0; c < cols; c++) {
+            row.push(createRandomEdge());
+          }
+          hConnections.push(row);
         }
-        hConnections.push(row);
-      }
 
-      const vConnections: Edge[][] = [];
-      for (let r = 0; r < rows; r++) {
-        const row = [];
-        for (let c = 0; c < cols - 1; c++) {
-          row.push(createRandomEdge());
+        const vConnections: Edge[][] = [];
+        for (let r = 0; r < rows; r++) {
+          const row = [];
+          for (let c = 0; c < cols - 1; c++) {
+            row.push(createRandomEdge());
+          }
+          vConnections.push(row);
         }
-        vConnections.push(row);
-      }
 
-      const w = img.width / cols;
-      const h = img.height / rows;
-      const spacingX = w * 1.5;
-      const spacingY = h * 1.5;
+        const w = img.width / cols;
+        const h = img.height / rows;
+        const spacingX = w * 1.5;
+        const spacingY = h * 1.5;
 
-      const positions: { x: number; y: number }[] = [];
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          positions.push({ x: c * spacingX, y: r * spacingY });
+        const positions: { x: number; y: number }[] = [];
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            positions.push({ x: c * spacingX, y: r * spacingY });
+          }
         }
-      }
 
-      for (let i = positions.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [positions[i], positions[j]] = [positions[j], positions[i]];
-      }
-
-      const pieces = [];
-      let posIndex = 0;
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const id = `piece_${r}_${c}`;
-          const pos = positions[posIndex++];
-          pieces.push({
-            id,
-            groupId: id,
-            x: pos.x,
-            y: pos.y,
-            col: c,
-            row: r,
-          });
+        // Modern Fisher-Yates shuffle
+        for (let i = positions.length - 1; i > 0; i--) {
+          const randomBuffer = new Uint32Array(1);
+          crypto.getRandomValues(randomBuffer);
+          const j = randomBuffer[0] % (i + 1);
+          [positions[i], positions[j]] = [positions[j], positions[i]];
         }
-      }
 
-      resolve({
-        imageUrl,
-        cols,
-        rows,
-        hConnections,
-        vConnections,
-        pieces,
-      });
+        const pieces = [];
+        let posIndex = 0;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const id = `piece_${r}_${c}`;
+            const pos = positions[posIndex++];
+            pieces.push({
+              id,
+              groupId: id,
+              x: pos.x,
+              y: pos.y,
+              col: c,
+              row: r,
+            });
+          }
+        }
+
+        resolve({
+          imageUrl,
+          cols,
+          rows,
+          hConnections,
+          vConnections,
+          pieces,
+        });
+      } catch (err) {
+        reject(err);
+      }
     };
-    img.onerror = reject;
+    img.onerror = () => reject(new Error('Failed to load image for state creation'));
     img.src = imageUrl;
   });
 }
@@ -177,86 +184,104 @@ export async function renderPuzzlePieces(
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const pieces: PieceData[] = [];
-      const { cols, rows, hConnections, vConnections } = state;
+    img.onload = async () => {
+      try {
+        const pieces: PieceData[] = [];
+        const { cols, rows, hConnections, vConnections } = state;
 
-      // To guarantee perfectly square pieces, calculate the required piece size based on minimum dimension crop
-      // We must use Math.min so the calculated puzzle grid is ALWAYS smaller than or equal to the photo's boundaries.
-      const pieceSize = Math.min(img.width / cols, img.height / rows);
-      const w = pieceSize;
-      const h = pieceSize;
+        const pieceSize = Math.min(img.width / cols, img.height / rows);
+        const w = pieceSize;
+        const h = pieceSize;
 
-      // We need to crop the original image to visually fit the exact cols * rows * pieceSize ratio
-      const cropWidth = w * cols;
-      const cropHeight = h * rows;
-      const sourceX = (img.width - cropWidth) / 2;
-      const sourceY = (img.height - cropHeight) / 2;
+        const cropWidth = w * cols;
+        const cropHeight = h * rows;
+        const sourceX = (img.width - cropWidth) / 2;
+        const sourceY = (img.height - cropHeight) / 2;
 
-      const padding = pieceSize * 0.25;
+        const padding = pieceSize * 0.25;
 
-      for (const pState of state.pieces) {
-        const { r, c } = { r: pState.row, c: pState.col };
-        const topEdge = r === 0 ? null : hConnections[r - 1][c];
-        const bottomEdge = r === rows - 1 ? null : hConnections[r][c];
-        const leftEdge = c === 0 ? null : vConnections[r][c - 1];
-        const rightEdge = c === cols - 1 ? null : vConnections[r][c];
+        const renderCanvas = document.createElement('canvas');
+        renderCanvas.width = w + padding * 2;
+        renderCanvas.height = h + padding * 2;
+        const ctx = renderCanvas.getContext('2d', { willReadFrequently: true });
 
-        const canvas = document.createElement('canvas');
-        canvas.width = w + padding * 2;
-        canvas.height = h + padding * 2;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) continue;
+        if (!ctx) {
+          throw new Error('Failed to get 2D context for rendering');
+        }
 
-        ctx.translate(padding, padding);
+        for (const pState of state.pieces) {
+          const { r, c } = { r: pState.row, c: pState.col };
+          const topEdge = r === 0 ? null : hConnections[r - 1][c];
+          const bottomEdge = r === rows - 1 ? null : hConnections[r][c];
+          const leftEdge = c === 0 ? null : vConnections[r][c - 1];
+          const rightEdge = c === cols - 1 ? null : vConnections[r][c];
 
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        drawEdge(ctx, w, topEdge, 1, false);
-        ctx.rotate(Math.PI / 2);
-        drawEdge(ctx, h, rightEdge, 1, false);
-        ctx.rotate(Math.PI / 2);
-        drawEdge(ctx, w, bottomEdge, -1, true);
-        ctx.rotate(Math.PI / 2);
-        drawEdge(ctx, h, leftEdge, -1, true);
-        ctx.closePath();
+          ctx.clearRect(0, 0, renderCanvas.width, renderCanvas.height);
+          ctx.save();
+          ctx.translate(padding, padding);
 
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clip();
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          drawEdge(ctx, w, topEdge, 1, false);
+          ctx.rotate(Math.PI / 2);
+          drawEdge(ctx, h, rightEdge, 1, false);
+          ctx.rotate(Math.PI / 2);
+          drawEdge(ctx, w, bottomEdge, -1, true);
+          ctx.rotate(Math.PI / 2);
+          drawEdge(ctx, h, leftEdge, -1, true);
+          ctx.closePath();
 
-        // Draw the full image shifted backwards. The clip() path has tabs extending into the padding area,
-        // so we must draw the entire surrounding region of the image, not just a w*h bounding box!
-        ctx.drawImage(
-          img,
-          padding - sourceX - c * w,
-          padding - sourceY - r * h,
-        );
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clip();
 
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+          ctx.drawImage(
+            img,
+            padding - sourceX - c * w,
+            padding - sourceY - r * h,
+          );
 
-        pieces.push({
-          id: pState.id,
-          groupId: pState.groupId,
-          correctX: c * w,
-          correctY: r * h,
-          x: pState.x,
-          y: pState.y,
-          width: w,
-          height: h,
-          padding,
-          canvas,
-          col: c,
-          row: r,
-        });
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.restore();
+
+          let image: ImageBitmap | HTMLCanvasElement;
+          if (typeof createImageBitmap !== 'undefined') {
+            image = await createImageBitmap(renderCanvas);
+          } else {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = renderCanvas.width;
+            tempCanvas.height = renderCanvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx?.drawImage(renderCanvas, 0, 0);
+            image = tempCanvas;
+          }
+
+          pieces.push({
+            id: pState.id,
+            groupId: pState.groupId,
+            correctX: c * w,
+            correctY: r * h,
+            x: pState.x,
+            y: pState.y,
+            width: w,
+            height: h,
+            padding,
+            image,
+            col: c,
+            row: r,
+          });
+        }
+        resolve(pieces);
+      } catch (err) {
+        reject(err);
       }
-      resolve(pieces);
     };
-    img.onerror = reject;
+    img.onerror = () => reject(new Error('Failed to load image for rendering puzzle pieces'));
     img.src = state.imageUrl;
   });
 }
