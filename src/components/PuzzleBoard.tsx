@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Stage, Layer, Image as KonvaImage, Group } from 'react-konva';
+import Konva from 'konva';
 import { PieceData } from '@/utils/puzzleGenerator';
 import { playClick, playSnap, getMuted, setMuted } from '@/utils/audio';
 import confetti from 'canvas-confetti';
@@ -65,7 +66,7 @@ export default function PuzzleBoard({
     };
   });
   const [stageScale, setStageScale] = useState(1);
-  const stageRef = useRef<any>(null);
+  const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 1024,
@@ -85,12 +86,15 @@ export default function PuzzleBoard({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleWheel = (e: any) => {
+  const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
-    const scaleBy = 1.1;
     const stage = stageRef.current;
-    const oldScale = stage.scaleX();
+    if (!stage) return;
     const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    const scaleBy = 1.1;
+    const oldScale = stage.scaleX();
 
     const mousePointTo = {
       x: (pointer.x - stage.x()) / oldScale,
@@ -108,13 +112,14 @@ export default function PuzzleBoard({
     });
   };
 
-  const handleTouchMove = (e: any) => {
+  const handleTouchMove = (e: Konva.KonvaEventObject<TouchEvent>) => {
     e.evt.preventDefault();
     const touch1 = e.evt.touches[0];
     const touch2 = e.evt.touches[1];
 
     if (touch1 && touch2) {
       const stage = stageRef.current;
+      if (!stage) return;
       if (stage.isDragging()) {
         stage.stopDrag();
       }
@@ -172,7 +177,7 @@ export default function PuzzleBoard({
     lastDist.current = 0;
   };
 
-  const handleDragStart = (e: any) => {
+  const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
     playClick();
     const id = e.target.id();
     const piece = pieces.find((p) => p.groupId === id);
@@ -188,7 +193,7 @@ export default function PuzzleBoard({
     if (onChange) onChange(reorderedPieces);
   };
 
-  const handleDragEnd = (e: any) => {
+  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     const groupId = e.target.id();
     const groupNode = e.target;
 
@@ -299,6 +304,7 @@ export default function PuzzleBoard({
     });
 
     const stage = stageRef.current;
+    if (!stage) return;
     const viewX = -stage.x() / stage.scaleX();
     const viewY = -stage.y() / stage.scaleY();
     const viewW = dimensions.width / stage.scaleX();

@@ -1,14 +1,11 @@
-import nextTypescript from "eslint-config-next/typescript";
-import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
+import nextTypescript from 'eslint-config-next/typescript';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const eslintConfig = [...nextCoreWebVitals];
-
-export default [...nextTypescript, eslintConfig, eslintConfigPrettier, {
-  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"]
-}];
+export default defineConfig([
+  ...nextCoreWebVitals,
+  ...nextTypescript,
+  eslintConfigPrettier,
+  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts']),
+]);

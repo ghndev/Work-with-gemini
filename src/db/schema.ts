@@ -4,7 +4,6 @@ import {
   integer,
   timestamp,
   primaryKey,
-  serial,
 } from 'drizzle-orm/pg-core';
 import type { AdapterAccountType } from 'next-auth/adapters';
 
@@ -60,11 +59,3 @@ export const verificationTokens = pgTable(
   (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })],
 );
 
-export const puzzles = pgTable('puzzles', {
-  id: serial('id').primaryKey(),
-  prompt: text('prompt').notNull(),
-  imageUrl: text('image_url').notNull(),
-  cols: integer('cols').notNull(),
-  rows: integer('rows').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});

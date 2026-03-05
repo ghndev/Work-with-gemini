@@ -1,9 +1,7 @@
 let audioCtx: AudioContext | null = null;
 function getAudioCtx() {
   if (!audioCtx && typeof window !== 'undefined') {
-    audioCtx = new (
-      window.AudioContext || (window as any).webkitAudioContext
-    )();
+    audioCtx = new AudioContext();
   }
   return audioCtx;
 }

@@ -1,40 +1,71 @@
 'use server';
 
+import { auth } from '@/auth';
 import { GoogleGenAI } from '@google/genai';
+
+const MAX_PROMPT_LENGTH = 500;
+const VALID_ASPECT_RATIOS = ['1:1', '16:9', '9:16'] as const;
 
 export async function generatePuzzleImage(
   prompt: string,
   aspectRatio: string = '1:1',
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: 'Authentication required' };
+  }
+
+  const trimmed = prompt.trim();
+  if (!trimmed || trimmed.length > MAX_PROMPT_LENGTH) {
+    return {
+      success: false,
+      error: `Prompt must be 1-${MAX_PROMPT_LENGTH} characters`,
+    };
+  }
+
+  if (
+    !VALID_ASPECT_RATIOS.includes(
+      aspectRatio as (typeof VALID_ASPECT_RATIOS)[number],
+    )
+  ) {
+    return { success: false, error: 'Invalid aspect ratio' };
+  }
+
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3.1-flash-image-preview',
       contents: {
-        parts: [{ text: prompt }],
+        parts: [{ text: trimmed }],
       },
       config: {
         responseModalities: ['IMAGE'],
         imageConfig: {
-          aspectRatio: aspectRatio,
+          aspectRatio,
           imageSize: '1K',
         },
       },
     });
 
-    let imageUrl = '';
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) {
-        imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        break;
-      }
+    const inlineData = response.candidates?.[0]?.content?.parts?.find(
+      (part) => part.inlineData,
+    )?.inlineData;
+
+    if (!inlineData) {
+      return {
+        success: false,
+        error: 'Failed to generate image (maybe copyright issue)',
+      };
     }
 
-    if (!imageUrl) throw new Error('Failed to generate image');
-
-    return { success: true, imageUrl };
-  } catch (error: any) {
+    return {
+      success: true,
+      imageUrl: `data:${inlineData.mimeType};base64,${inlineData.data}`,
+    };
+  } catch (error: unknown) {
     console.error('Error generating puzzle image:', error);
-    return { success: false, error: error.message || 'An error occurred' };
+    const message =
+      error instanceof Error ? error.message : 'An error occurred';
+    return { success: false, error: message };
   }
 }
