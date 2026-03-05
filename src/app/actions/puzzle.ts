@@ -65,8 +65,10 @@ export async function generatePuzzleImage(
     };
   } catch (error: unknown) {
     console.error('Error generating puzzle image:', error);
-    const message =
-      error instanceof Error ? error.message : 'An error occurred';
-    return { success: false, error: message };
+    return {
+      success: false,
+      error:
+        'An error occurred while generating the puzzle image. Please try again later.',
+    };
   }
 }

@@ -27,10 +27,21 @@ export function usePuzzleGenerator(
     await onPuzzleCreated(newState, renderedPieces);
   }, [onPuzzleCreated]);
 
-  const generateAI = useCallback(async (prompt: string, aspectRatio: string, difficulty: Difficulty) => {
+  const executeTask = useCallback(async (taskName: string, task: () => Promise<void>) => {
     setLoading(true);
     setError('');
     try {
+      await task();
+    } catch (err: unknown) {
+      console.error(`Error in ${taskName}:`, err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const generateAI = useCallback((prompt: string, aspectRatio: string, difficulty: Difficulty) => {
+    return executeTask('generateAI', async () => {
       const result = await generatePuzzleImage(prompt, aspectRatio);
 
       if (!result.success || !result.imageUrl) {
@@ -38,32 +49,14 @@ export function usePuzzleGenerator(
       }
 
       await createPuzzleFromImage(result.imageUrl, difficulty);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('An unknown error occurred');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [createPuzzleFromImage]);
+    });
+  }, [executeTask, createPuzzleFromImage]);
 
-  const generatePreset = useCallback(async (imageUrl: string, difficulty: Difficulty) => {
-    setLoading(true);
-    setError('');
-    try {
+  const generatePreset = useCallback((imageUrl: string, difficulty: Difficulty) => {
+    return executeTask('generatePreset', async () => {
       await createPuzzleFromImage(imageUrl, difficulty);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('An unknown error occurred');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [createPuzzleFromImage]);
+    });
+  }, [executeTask, createPuzzleFromImage]);
 
   return {
     loading,
