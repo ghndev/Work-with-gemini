@@ -7,7 +7,7 @@ export async function generatePuzzleImage(
   aspectRatio: string = '1:1',
 ) {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.MY_GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3.1-flash-image-preview',
       contents: {
