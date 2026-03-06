@@ -1,3 +1,4 @@
+import { useCallback, useRef, useEffect } from 'react';
 import Konva from 'konva';
 import { PieceData } from '@/utils/puzzleGenerator';
 import { playClick, playSnap } from '@/utils/audio';
@@ -13,30 +14,39 @@ interface UsePuzzleDragProps {
 }
 
 export function usePuzzleDrag({ pieces, setPieces, onChange, onComplete }: UsePuzzleDragProps) {
-  const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>, stageRef: React.RefObject<Konva.Stage | null>) => {
+  // Use a ref to access latest pieces without causing dependency recreation
+  const piecesRef = useRef(pieces);
+  const callbacksRef = useRef({ onChange, onComplete });
+
+  useEffect(() => {
+    piecesRef.current = pieces;
+    callbacksRef.current = { onChange, onComplete };
+  }, [pieces, onChange, onComplete]);
+
+  const handleDragStart = useCallback((e: Konva.KonvaEventObject<DragEvent>, stageRef: React.RefObject<Konva.Stage | null>) => {
     if (e.target === stageRef.current) return;
     playClick();
     // Purely visual Z-index update using Konva API bypasses heavy React re-renders on drag start
     e.target.moveToTop();
-  };
+  }, []);
 
-  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+  const handleDragEnd = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
     const groupId = e.target.id();
     const groupNode = e.target;
+    const currentPieces = piecesRef.current;
 
     const newOffsetX = groupNode.x();
     const newOffsetY = groupNode.y();
 
     let snapped = false;
-    let newPieces = [...pieces];
+    let newPieces = [...currentPieces];
 
     const draggedGroupPieces = newPieces.filter((p) => p.groupId === groupId);
     const otherPieces = newPieces.filter((p) => p.groupId !== groupId);
 
     for (const dp of draggedGroupPieces) {
       for (const op of otherPieces) {
-        const isAdjacent =
-          Math.abs(dp.col - op.col) + Math.abs(dp.row - op.row) === 1;
+        const isAdjacent = Math.abs(dp.col - op.col) + Math.abs(dp.row - op.row) === 1;
         if (!isAdjacent) continue;
 
         const opOffsetX = op.x - op.correctX;
@@ -81,23 +91,23 @@ export function usePuzzleDrag({ pieces, setPieces, onChange, onComplete }: UsePu
       });
     }
 
-    // Move the active group to the end of the array to persist visual z-index correctly 
-    // after the declarative state update.
     const activeGroupPieces = newPieces.filter((p) => p.groupId === groupId || (snapped && p.groupId === newPieces.find(np => np.groupId === groupId)?.groupId));
     const inactivePieces = newPieces.filter((p) => !activeGroupPieces.includes(p));
     newPieces = [...inactivePieces, ...activeGroupPieces];
 
     setPieces(newPieces);
-    if (onChange) onChange(newPieces);
+    
+    const { onChange: latestOnChange, onComplete: latestOnComplete } = callbacksRef.current;
+    if (latestOnChange) latestOnChange(newPieces);
 
     if (snapped) {
       const firstGroupId = newPieces[0].groupId;
       if (newPieces.every((p) => p.groupId === firstGroupId)) {
         confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
-        onComplete();
+        latestOnComplete();
       }
     }
-  };
+  }, [setPieces]);
 
   return { handleDragStart, handleDragEnd };
 }

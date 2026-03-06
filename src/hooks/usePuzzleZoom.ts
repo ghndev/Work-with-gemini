@@ -1,4 +1,4 @@
-import { useState, useRef, RefObject } from 'react';
+import { useEffect, useRef, RefObject } from 'react';
 import Konva from 'konva';
 import { playClick } from '@/utils/audio';
 
@@ -6,14 +6,28 @@ export function usePuzzleZoom(
   stageRef: RefObject<Konva.Stage | null>,
   dimensions: { width: number; height: number },
   initialPos: { x: number; y: number },
+  isDraggingPieceRef: RefObject<boolean>,
 ) {
-  const [stagePos, setStagePos] = useState(initialPos);
-  const [stageScale, setStageScale] = useState(1);
   const lastCenter = useRef<{ x: number; y: number } | null>(null);
   const lastDist = useRef<number>(0);
+  const isInitialized = useRef(false);
+
+  // Initialize stage without React state to prevent re-render tearing
+  useEffect(() => {
+    if (isInitialized.current) return;
+    const stage = stageRef.current;
+    if (stage) {
+      stage.position(initialPos);
+      stage.scale({ x: 1, y: 1 });
+      stage.batchDraw();
+      isInitialized.current = true;
+    }
+  }, [initialPos, stageRef]);
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
+    if (isDraggingPieceRef.current) return; // Prevent zoom while dragging pieces
+
     const stage = stageRef.current;
     if (!stage) return;
     const pointer = stage.getPointerPosition();
@@ -31,15 +45,18 @@ export function usePuzzleZoom(
 
     if (newScale < 0.1 || newScale > 5) return;
 
-    setStageScale(newScale);
-    setStagePos({
+    stage.scale({ x: newScale, y: newScale });
+    stage.position({
       x: pointer.x - mousePointTo.x * newScale,
       y: pointer.y - mousePointTo.y * newScale,
     });
+    stage.batchDraw();
   };
 
   const handleTouchMove = (e: Konva.KonvaEventObject<TouchEvent>) => {
     e.evt.preventDefault();
+    if (isDraggingPieceRef.current) return; // Prevent pinch zoom while dragging pieces
+
     const touch1 = e.evt.touches[0];
     const touch2 = e.evt.touches[1];
 
@@ -90,8 +107,9 @@ export function usePuzzleZoom(
           (center.y - lastCenter.current.y),
       };
 
-      setStageScale(newScale);
-      setStagePos(newPos);
+      stage.scale({ x: newScale, y: newScale });
+      stage.position(newPos);
+      stage.batchDraw();
 
       lastCenter.current = center;
       lastDist.current = dist;
@@ -130,13 +148,12 @@ export function usePuzzleZoom(
       y: center.y - mousePointTo.y * newScale,
     };
 
-    setStageScale(newScale);
-    setStagePos(newPos);
+    stage.scale({ x: newScale, y: newScale });
+    stage.position(newPos);
+    stage.batchDraw();
   };
 
   return {
-    stagePos,
-    stageScale,
     handleWheel,
     handleTouchMove,
     handleTouchEnd,

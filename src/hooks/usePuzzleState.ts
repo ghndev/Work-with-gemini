@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { get, set, del } from 'idb-keyval';
 import {
   PieceData,
@@ -11,69 +11,72 @@ export function usePuzzleState() {
   const [puzzleState, setPuzzleState] = useState<PuzzleState | null>(null);
   const [puzzleId, setPuzzleId] = useState(0);
   const [showPuzzle, setShowPuzzle] = useState(false);
+  const isInitialized = useRef(false);
 
+  // Load saved puzzle on mount
   useEffect(() => {
-    (async () => {
+    let isMounted = true;
+
+    async function initializePuzzle() {
       try {
-        const savedState = (await get('savedPuzzle')) as
-          | PuzzleState
-          | undefined;
-        if (savedState) {
-          const renderedPieces = await renderPuzzlePieces(savedState);
-          setPuzzleState(savedState);
-          setPieces(renderedPieces);
-        }
+        const savedState = await get<PuzzleState>('savedPuzzle');
+        if (!savedState || !isMounted) return;
+
+        const renderedPieces = await renderPuzzlePieces(savedState);
+        if (!isMounted) return;
+
+        setPuzzleState(savedState);
+        setPieces(renderedPieces);
       } catch (e) {
         console.error('Error loading saved puzzle:', e);
         try {
           await del('savedPuzzle');
         } catch {
-          // Ignore errors removing saved puzzle
+          /* ignore */
+        }
+      } finally {
+        if (isMounted) {
+          isInitialized.current = true;
         }
       }
-    })();
-  }, []);
+    }
 
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-  useEffect(() => {
+    initializePuzzle();
     return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      isMounted = false;
     };
   }, []);
 
-  const debouncedSave = useMemo(
-    () => (state: PuzzleState) => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        set('savedPuzzle', state).catch(console.error);
-      }, 500);
-    },
-    [],
-  );
+  // Autosave when puzzleState changes
+  useEffect(() => {
+    if (!isInitialized.current || !puzzleState) return;
 
-  const updatePieces = useCallback(
-    (newPieces: PieceData[]) => {
-      setPieces(newPieces);
-      setPuzzleState((currentState) => {
-        if (!currentState) return null;
-        const updatedState = {
-          ...currentState,
-          pieces: newPieces.map((p) => ({
-            id: p.id,
-            groupId: p.groupId,
-            x: p.x,
-            y: p.y,
-            col: p.col,
-            row: p.row,
-          })),
-        };
-        debouncedSave(updatedState);
-        return updatedState;
-      });
-    },
-    [debouncedSave],
-  );
+    const timeoutId = setTimeout(() => {
+      set('savedPuzzle', puzzleState).catch(console.error);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [puzzleState]);
+
+  const updatePieces = useCallback((newPieces: PieceData[]) => {
+    setPieces(newPieces);
+
+    // Pure state updater: no side-effects allowed inside
+    setPuzzleState((currentState) => {
+      if (!currentState) return null;
+      return {
+        ...currentState,
+        pieces: newPieces.map(({ id, groupId, x, y, col, row }) => ({
+          id,
+          groupId,
+          x,
+          y,
+          col,
+          row,
+        })),
+      };
+    });
+  }, []);
 
   const loadNewPuzzle = useCallback(
     async (newState: PuzzleState, renderedPieces: PieceData[]) => {

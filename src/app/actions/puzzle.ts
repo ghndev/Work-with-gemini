@@ -9,6 +9,7 @@ const VALID_ASPECT_RATIOS = ['1:1', '16:9', '9:16'] as const;
 export async function generatePuzzleImage(
   prompt: string,
   aspectRatio: string = '1:1',
+  isHardMode: boolean = false,
 ) {
   const session = await auth();
 
@@ -43,7 +44,7 @@ export async function generatePuzzleImage(
         responseModalities: ['IMAGE'],
         imageConfig: {
           aspectRatio,
-          imageSize: '1K',
+          ...(isHardMode ? { imageSize: '2K' } : {}),
         },
       },
     });

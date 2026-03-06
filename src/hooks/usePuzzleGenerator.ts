@@ -1,65 +1,92 @@
-import { useState, useCallback } from 'react';
+import { useState, useTransition, useCallback, useRef, useEffect } from 'react';
 import { generatePuzzleImage } from '@/app/actions/puzzle';
 import { calculateGrid } from '@/utils/puzzleHelpers';
-import { createPuzzleState, renderPuzzlePieces, PuzzleState, PieceData } from '@/utils/puzzleGenerator';
+import {
+  createPuzzleState,
+  renderPuzzlePieces,
+  PuzzleState,
+  PieceData,
+} from '@/utils/puzzleGenerator';
 import { DIFFICULTY_SETTINGS, Difficulty } from '@/constants/puzzle';
 
 export function usePuzzleGenerator(
-  onPuzzleCreated: (state: PuzzleState, pieces: PieceData[]) => Promise<void> | void
+  onPuzzleCreated: (
+    state: PuzzleState,
+    pieces: PieceData[],
+  ) => Promise<void> | void,
 ) {
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
 
-  const createPuzzleFromImage = useCallback(async (imageUrl: string, difficulty: Difficulty) => {
-    const { pieces } = DIFFICULTY_SETTINGS[difficulty];
-    const { cols: computedCols, rows: computedRows } = await calculateGrid(
-      imageUrl,
-      pieces,
-    );
-
-    const newState = await createPuzzleState(
-      imageUrl,
-      computedCols,
-      computedRows,
-    );
-    const renderedPieces = await renderPuzzlePieces(newState);
-    
-    await onPuzzleCreated(newState, renderedPieces);
+  // 🚨 렌더링 최적화: 부모 컴포넌트(PuzzleApp)에서 인라인 함수를 넘길 때 
+  // 매번 내부 useCallback이 깨지는(재생성되는) Anti-pattern을 방지하기 위한 Ref 보관 기법
+  const onPuzzleCreatedRef = useRef(onPuzzleCreated);
+  useEffect(() => {
+    onPuzzleCreatedRef.current = onPuzzleCreated;
   }, [onPuzzleCreated]);
 
-  const executeTask = useCallback(async (taskName: string, task: () => Promise<void>) => {
-    setLoading(true);
-    setError('');
-    try {
-      await task();
-    } catch (err: unknown) {
-      console.error(`Error in ${taskName}:`, err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const createPuzzleFromImage = useCallback(
+    async (imageUrl: string, difficulty: Difficulty) => {
+      const { pieces } = DIFFICULTY_SETTINGS[difficulty];
+      const { cols: computedCols, rows: computedRows } = await calculateGrid(
+        imageUrl,
+        pieces,
+      );
 
-  const generateAI = useCallback((prompt: string, aspectRatio: string, difficulty: Difficulty) => {
-    return executeTask('generateAI', async () => {
-      const result = await generatePuzzleImage(prompt, aspectRatio);
+      const newState = await createPuzzleState(
+        imageUrl,
+        computedCols,
+        computedRows,
+      );
+      const renderedPieces = await renderPuzzlePieces(newState);
 
-      if (!result.success || !result.imageUrl) {
-        throw new Error(result.error || 'Failed to generate image');
-      }
+      await onPuzzleCreatedRef.current(newState, renderedPieces);
+    },
+    [], // 이제 deps를 완전히 비울 수 있어 함수가 절대 재생성되지 않습니다!
+  );
 
-      await createPuzzleFromImage(result.imageUrl, difficulty);
-    });
-  }, [executeTask, createPuzzleFromImage]);
+  const generateAI = useCallback(
+    (prompt: string, aspectRatio: string, difficulty: Difficulty) => {
+      setError('');
+      startTransition(async () => {
+        try {
+          const result = await generatePuzzleImage(prompt, aspectRatio, difficulty === 'hard');
 
-  const generatePreset = useCallback((imageUrl: string, difficulty: Difficulty) => {
-    return executeTask('generatePreset', async () => {
-      await createPuzzleFromImage(imageUrl, difficulty);
-    });
-  }, [executeTask, createPuzzleFromImage]);
+          if (!result.success || !result.imageUrl) {
+            throw new Error(result.error || 'Failed to generate image');
+          }
+
+          await createPuzzleFromImage(result.imageUrl, difficulty);
+        } catch (err: unknown) {
+          console.error('Error in generateAI:', err);
+          setError(
+            err instanceof Error ? err.message : 'An unknown error occurred',
+          );
+        }
+      });
+    },
+    [createPuzzleFromImage],
+  );
+
+  const generatePreset = useCallback(
+    (imageUrl: string, difficulty: Difficulty) => {
+      setError('');
+      startTransition(async () => {
+        try {
+          await createPuzzleFromImage(imageUrl, difficulty);
+        } catch (err: unknown) {
+          console.error('Error in generatePreset:', err);
+          setError(
+            err instanceof Error ? err.message : 'An unknown error occurred',
+          );
+        }
+      });
+    },
+    [createPuzzleFromImage],
+  );
 
   return {
-    loading,
+    loading: isPending,
     error,
     setError,
     generateAI,

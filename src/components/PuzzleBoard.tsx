@@ -22,18 +22,15 @@ export default function PuzzleBoard({
   const [showBorderOnly, setShowBorderOnly] = useState(false);
   const [isMuted, setIsMutedState] = useState(getMuted());
 
-  const maxRow = useMemo(
-    () => Math.max(...initialPieces.map((p) => p.row)),
-    [initialPieces],
-  );
-  const maxCol = useMemo(
-    () => Math.max(...initialPieces.map((p) => p.col)),
-    [initialPieces],
-  );
+  // Use useState for initial calculations so they compute exactly ONCE per mount.
+  // This prevents the canvas from resetting its zoom/pan state when pieces update.
+  const [maxRow] = useState(() => Math.max(...initialPieces.map((p) => p.row)));
+  const [maxCol] = useState(() => Math.max(...initialPieces.map((p) => p.col)));
+
   const isEdge = (p: PieceData) =>
     p.row === 0 || p.row === maxRow || p.col === 0 || p.col === maxCol;
 
-  const initialPos = useMemo(() => {
+  const [initialPos] = useState(() => {
     if (initialPieces.length === 0) return { x: 0, y: 0 };
     let minX = Infinity,
       minY = Infinity,
@@ -50,11 +47,12 @@ export default function PuzzleBoard({
     const w = typeof window !== 'undefined' ? window.innerWidth : 1024;
     const h = typeof window !== 'undefined' ? window.innerHeight : 768;
     return { x: w / 2 - cx, y: h / 2 - cy };
-  }, [initialPieces]);
+  });
 
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isDraggingPieceRef = useRef(false);
 
   useEffect(() => {
     setDimensions({ width: window.innerWidth, height: window.innerHeight });
@@ -64,14 +62,8 @@ export default function PuzzleBoard({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const {
-    stagePos,
-    stageScale,
-    handleWheel,
-    handleTouchMove,
-    handleTouchEnd,
-    handleZoom,
-  } = usePuzzleZoom(stageRef, dimensions, initialPos);
+  const { handleWheel, handleTouchMove, handleTouchEnd, handleZoom } =
+    usePuzzleZoom(stageRef, dimensions, initialPos, isDraggingPieceRef);
   const { handleDragStart, handleDragEnd } = usePuzzleDrag({
     pieces,
     setPieces,
@@ -164,10 +156,6 @@ export default function PuzzleBoard({
         onWheel={handleWheel}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        scaleX={stageScale}
-        scaleY={stageScale}
-        x={stagePos.x}
-        y={stagePos.y}
         draggable
         ref={stageRef}
         onDragStart={(e) => {
@@ -192,8 +180,14 @@ export default function PuzzleBoard({
                 x={offsetX}
                 y={offsetY}
                 draggable
-                onDragStart={(e) => handleDragStart(e, stageRef)}
-                onDragEnd={handleDragEnd}
+                onDragStart={(e) => {
+                  isDraggingPieceRef.current = true;
+                  handleDragStart(e, stageRef);
+                }}
+                onDragEnd={(e) => {
+                  isDraggingPieceRef.current = false;
+                  handleDragEnd(e);
+                }}
               >
                 {groupPieces.map((piece) => {
                   if (showBorderOnly && !isEdge(piece)) return null;
