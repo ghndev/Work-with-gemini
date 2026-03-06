@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { get, set, del } from 'idb-keyval';
 import {
   PieceData,
@@ -58,7 +58,7 @@ export function usePuzzleState() {
     return () => clearTimeout(timeoutId);
   }, [puzzleState]);
 
-  const updatePieces = useCallback((newPieces: PieceData[]) => {
+  const updatePieces = (newPieces: PieceData[]) => {
     setPieces(newPieces);
 
     // Pure state updater: no side-effects allowed inside
@@ -76,20 +76,17 @@ export function usePuzzleState() {
         })),
       };
     });
-  }, []);
+  };
 
-  const loadNewPuzzle = useCallback(
-    async (newState: PuzzleState, renderedPieces: PieceData[]) => {
-      setPuzzleState(newState);
-      setPieces(renderedPieces);
-      setPuzzleId((prev) => prev + 1);
-      setShowPuzzle(true);
-      await set('savedPuzzle', newState);
-    },
-    [],
-  );
+  const loadNewPuzzle = async (newState: PuzzleState, renderedPieces: PieceData[]) => {
+    setPuzzleState(newState);
+    setPieces(renderedPieces);
+    setPuzzleId((prev) => prev + 1);
+    setShowPuzzle(true);
+    await set('savedPuzzle', newState);
+  };
 
-  const giveUp = useCallback(async () => {
+  const giveUp = async () => {
     if (
       window.confirm(
         'Are you sure you want to give up? All current puzzle progress will be lost.',
@@ -104,15 +101,15 @@ export function usePuzzleState() {
       setPuzzleState(null);
       setShowPuzzle(false);
     }
-  }, []);
+  };
 
-  const clearSave = useCallback(async () => {
+  const clearSave = async () => {
     try {
       await del('savedPuzzle');
     } catch (e) {
       console.error('Error clearing saved puzzle:', e);
     }
-  }, []);
+  };
 
   return {
     pieces,

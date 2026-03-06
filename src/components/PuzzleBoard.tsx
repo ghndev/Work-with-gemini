@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Stage, Layer, Image as KonvaImage, Group } from 'react-konva';
 import Konva from 'konva';
 import { PieceData } from '@/utils/puzzleGenerator';
@@ -22,32 +22,35 @@ export default function PuzzleBoard({
   const [showBorderOnly, setShowBorderOnly] = useState(false);
   const [isMuted, setIsMutedState] = useState(getMuted());
 
-  // Use useState for initial calculations so they compute exactly ONCE per mount.
-  // This prevents the canvas from resetting its zoom/pan state when pieces update.
-  const [maxRow] = useState(() => Math.max(...initialPieces.map((p) => p.row)));
-  const [maxCol] = useState(() => Math.max(...initialPieces.map((p) => p.col)));
+  // React Compiler automatically memoizes these calculations. Use simple variables instead of useState for static values.
+  const maxRow = Math.max(...initialPieces.map((p) => p.row));
+  const maxCol = Math.max(...initialPieces.map((p) => p.col));
 
   const isEdge = (p: PieceData) =>
     p.row === 0 || p.row === maxRow || p.col === 0 || p.col === maxCol;
 
-  const [initialPos] = useState(() => {
-    if (initialPieces.length === 0) return { x: 0, y: 0 };
-    let minX = Infinity,
-      minY = Infinity,
-      maxX = -Infinity,
-      maxY = -Infinity;
-    initialPieces.forEach((p) => {
-      if (p.x < minX) minX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y > maxY) maxY = p.y;
-    });
-    const cx = (minX + maxX) / 2;
-    const cy = (minY + maxY) / 2;
-    const w = typeof window !== 'undefined' ? window.innerWidth : 1024;
-    const h = typeof window !== 'undefined' ? window.innerHeight : 768;
-    return { x: w / 2 - cx, y: h / 2 - cy };
-  });
+  const initialPos = useRef<{ x: number; y: number } | null>(null);
+  if (!initialPos.current) {
+    if (initialPieces.length === 0) {
+      initialPos.current = { x: 0, y: 0 };
+    } else {
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
+      initialPieces.forEach((p) => {
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y > maxY) maxY = p.y;
+      });
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+      const w = typeof window !== 'undefined' ? window.innerWidth : 1024;
+      const h = typeof window !== 'undefined' ? window.innerHeight : 768;
+      initialPos.current = { x: w / 2 - cx, y: h / 2 - cy };
+    }
+  }
 
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const stageRef = useRef<Konva.Stage>(null);
@@ -63,7 +66,12 @@ export default function PuzzleBoard({
   }, []);
 
   const { handleWheel, handleTouchMove, handleTouchEnd, handleZoom } =
-    usePuzzleZoom(stageRef, dimensions, initialPos, isDraggingPieceRef);
+    usePuzzleZoom(
+      stageRef,
+      dimensions,
+      initialPos.current!,
+      isDraggingPieceRef,
+    );
   const { handleDragStart, handleDragEnd } = usePuzzleDrag({
     pieces,
     setPieces,
@@ -71,14 +79,14 @@ export default function PuzzleBoard({
     onComplete,
   });
 
-  const groups = useMemo(() => {
+  const groups = (() => {
     const map = new Map<string, PieceData[]>();
     for (const p of pieces) {
       if (!map.has(p.groupId)) map.set(p.groupId, []);
       map.get(p.groupId)!.push(p);
     }
     return Array.from(map.values());
-  }, [pieces]);
+  })();
 
   const handleSort = () => {
     playClick();
