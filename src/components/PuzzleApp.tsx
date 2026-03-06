@@ -103,7 +103,7 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
       </div>
 
       {showConfirmGiveUp && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity">
           <div className="mx-4 w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
             <h3 className="mb-2 text-xl font-medium text-white">Give up?</h3>
             <p className="mb-6 text-sm text-zinc-400">
@@ -123,7 +123,7 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
                   giveUp();
                   setShowConfirmGiveUp(false);
                 }}
-                className="rounded-xl bg-red-500/20 px-4 py-2 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/40 hover:bg-red-600 hover:text-white"
+                className="rounded-xl bg-red-500/20 px-4 py-2 text-sm font-medium text-red-200 transition-colors hover:bg-red-600 hover:text-white"
               >
                 Yes, Give Up
               </button>
