@@ -15,16 +15,12 @@ export function usePuzzleState() {
 
   // Load saved puzzle on mount
   useEffect(() => {
-    let isMounted = true;
-
     async function initializePuzzle() {
       try {
         const savedState = await get<PuzzleState>('savedPuzzle');
-        if (!savedState || !isMounted) return;
+        if (!savedState) return;
 
         const renderedPieces = await renderPuzzlePieces(savedState);
-        if (!isMounted) return;
-
         setPuzzleState(savedState);
         setPieces(renderedPieces);
       } catch (e) {
@@ -35,16 +31,11 @@ export function usePuzzleState() {
           /* ignore */
         }
       } finally {
-        if (isMounted) {
-          isInitialized.current = true;
-        }
+        isInitialized.current = true;
       }
     }
 
     initializePuzzle();
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   // Autosave when puzzleState changes
@@ -78,7 +69,10 @@ export function usePuzzleState() {
     });
   };
 
-  const loadNewPuzzle = async (newState: PuzzleState, renderedPieces: PieceData[]) => {
+  const loadNewPuzzle = async (
+    newState: PuzzleState,
+    renderedPieces: PieceData[],
+  ) => {
     setPuzzleState(newState);
     setPieces(renderedPieces);
     setPuzzleId((prev) => prev + 1);
@@ -87,20 +81,14 @@ export function usePuzzleState() {
   };
 
   const giveUp = async () => {
-    if (
-      window.confirm(
-        'Are you sure you want to give up? All current puzzle progress will be lost.',
-      )
-    ) {
-      try {
-        await del('savedPuzzle');
-      } catch (e) {
-        console.error('Error deleting saved puzzle:', e);
-      }
-      setPieces(null);
-      setPuzzleState(null);
-      setShowPuzzle(false);
+    try {
+      await del('savedPuzzle');
+    } catch (e) {
+      console.error('Error deleting saved puzzle:', e);
     }
+    setPieces(null);
+    setPuzzleState(null);
+    setShowPuzzle(false);
   };
 
   const clearSave = async () => {

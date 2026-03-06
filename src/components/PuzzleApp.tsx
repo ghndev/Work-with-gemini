@@ -26,6 +26,7 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [showSettings, setShowSettings] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
+  const [showConfirmGiveUp, setShowConfirmGiveUp] = useState(false);
   const [isPresetPending, startPresetTransition] = useTransition();
 
   const {
@@ -94,12 +95,42 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
           Back
         </button>
         <button
-          onClick={giveUp}
+          onClick={() => setShowConfirmGiveUp(true)}
           className="absolute bottom-6 left-6 z-10 rounded-full bg-red-500/20 px-4 py-2 text-sm text-red-200 backdrop-blur-md transition-colors hover:bg-red-500/40"
         >
           Give Up
         </button>
       </div>
+
+      {showConfirmGiveUp && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity">
+          <div className="mx-4 w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
+            <h3 className="mb-2 text-xl font-medium text-white">Give up?</h3>
+            <p className="mb-6 text-sm text-zinc-400">
+              All current puzzle progress will be lost. This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirmGiveUp(false)}
+                className="rounded-xl bg-zinc-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  giveUp();
+                  setShowConfirmGiveUp(false);
+                }}
+                className="rounded-xl bg-red-500/20 px-4 py-2 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/40 hover:bg-red-600 hover:text-white"
+              >
+                Yes, Give Up
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div
         className={`min-h-screen flex-col items-center justify-center p-6 ${

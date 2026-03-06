@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useSyncExternalStore } from 'react';
 import { Stage, Layer, Image as KonvaImage, Group } from 'react-konva';
 import Konva from 'konva';
 import { PieceData } from '@/utils/puzzleGenerator';
@@ -54,18 +54,48 @@ export default function PuzzleBoard({
     }
   }
 
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const windowDimensionsRef = useRef<{ width: number; height: number } | null>(
+    null,
+  );
+  if (!windowDimensionsRef.current && typeof window !== 'undefined') {
+    windowDimensionsRef.current = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+  }
+
+  const subscribeWindow = (callback: () => void) => {
+    window.addEventListener('resize', callback);
+    return () => window.removeEventListener('resize', callback);
+  };
+
+  const getWindowSnapshot = () => {
+    // Only return a new object if dimensions actually changed to avoid infinite re-renders
+    if (!windowDimensionsRef.current)
+      return { width: window.innerWidth, height: window.innerHeight };
+    if (
+      windowDimensionsRef.current.width !== window.innerWidth ||
+      windowDimensionsRef.current.height !== window.innerHeight
+    ) {
+      windowDimensionsRef.current = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      };
+    }
+    return windowDimensionsRef.current;
+  };
+
+  const getServerSnapshot = () => ({ width: 1024, height: 768 });
+
+  const dimensions = useSyncExternalStore(
+    subscribeWindow,
+    getWindowSnapshot,
+    getServerSnapshot,
+  );
+
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDraggingPieceRef = useRef(false);
-
-  useEffect(() => {
-    setDimensions({ width: window.innerWidth, height: window.innerHeight });
-    const handleResize = () =>
-      setDimensions({ width: window.innerWidth, height: window.innerHeight });
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const { handleWheel, handleTouchMove, handleTouchEnd, handleZoom } =
     usePuzzleZoom(
