@@ -56,11 +56,11 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
     selectedDifficulty: Difficulty,
   ) => {
     setDifficulty(selectedDifficulty);
-    setShowGallery(false);
     setAspectRatio('4:3');
     startPresetTransition(async () => {
       try {
         await generatePreset(imageUrl, selectedDifficulty);
+        setShowGallery(false);
       } catch (e) {
         alert(e instanceof Error ? e.message : 'Error generating preset');
       }
