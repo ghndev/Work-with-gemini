@@ -21,11 +21,6 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export default function LoginPage() {
-  const handleSignIn = async () => {
-    'use server';
-    await signIn('google', { redirectTo: '/' });
-  };
-
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-4 text-zinc-100">
       <div className="w-full max-w-sm space-y-8">
@@ -38,7 +33,13 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form action={handleSignIn} className="space-y-4">
+        <form
+          action={async () => {
+            'use server';
+            await signIn('google', { redirectTo: '/' });
+          }}
+          className="space-y-4"
+        >
           <SubmitButton
             type="submit"
             pendingText="Signing in..."
