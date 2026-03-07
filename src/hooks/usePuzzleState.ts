@@ -11,9 +11,10 @@ export function usePuzzleState() {
   const [puzzleState, setPuzzleState] = useState<PuzzleState | null>(null);
   const [puzzleId, setPuzzleId] = useState(0);
   const [showPuzzle, setShowPuzzle] = useState(false);
-  const isInitialized = useRef(false);
 
-  // Load saved puzzle on mount
+  const isInitialized = useRef(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     async function initializePuzzle() {
       try {
@@ -38,21 +39,27 @@ export function usePuzzleState() {
     initializePuzzle();
   }, []);
 
-  // Autosave when puzzleState changes
   useEffect(() => {
     if (!isInitialized.current || !puzzleState) return;
 
-    const timeoutId = setTimeout(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
       set('savedPuzzle', puzzleState).catch(console.error);
     }, 500);
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [puzzleState]);
 
   const updatePieces = (newPieces: PieceData[]) => {
     setPieces(newPieces);
 
-    // Pure state updater: no side-effects allowed inside
     setPuzzleState((currentState) => {
       if (!currentState) return null;
       return {

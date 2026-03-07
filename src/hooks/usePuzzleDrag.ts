@@ -24,23 +24,24 @@ export function usePuzzleDrag({
   ) => {
     if (e.target === stageRef.current) return;
     playClick();
-    // Purely visual Z-index update using Konva API bypasses heavy React re-renders on drag start
     e.target.moveToTop();
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    const groupId = e.target.id();
+    const originalGroupId = e.target.id();
     const groupNode = e.target;
-    const currentPieces = pieces;
 
     const newOffsetX = groupNode.x();
     const newOffsetY = groupNode.y();
 
     let snapped = false;
-    let newPieces = [...currentPieces];
+    let finalGroupId = originalGroupId;
+    let newPieces = [...pieces];
 
-    const draggedGroupPieces = newPieces.filter((p) => p.groupId === groupId);
-    const otherPieces = newPieces.filter((p) => p.groupId !== groupId);
+    const draggedGroupPieces = newPieces.filter(
+      (p) => p.groupId === originalGroupId,
+    );
+    const otherPieces = newPieces.filter((p) => p.groupId !== originalGroupId);
 
     for (const dp of draggedGroupPieces) {
       for (const op of otherPieces) {
@@ -58,16 +59,16 @@ export function usePuzzleDrag({
 
         if (dist < SNAP_THRESHOLD) {
           snapped = true;
+          finalGroupId = op.groupId;
           playSnap();
 
-          const targetGroupId = op.groupId;
           newPieces = newPieces.map((p) => {
-            if (p.groupId === groupId) {
+            if (p.groupId === originalGroupId) {
               return {
                 ...p,
                 x: p.correctX + opOffsetX,
                 y: p.correctY + opOffsetY,
-                groupId: targetGroupId,
+                groupId: finalGroupId,
               };
             }
             return p;
@@ -80,7 +81,7 @@ export function usePuzzleDrag({
 
     if (!snapped) {
       newPieces = newPieces.map((p) => {
-        if (p.groupId === groupId) {
+        if (p.groupId === originalGroupId) {
           return {
             ...p,
             x: p.correctX + newOffsetX,
@@ -92,24 +93,16 @@ export function usePuzzleDrag({
     }
 
     const activeGroupPieces = newPieces.filter(
-      (p) =>
-        p.groupId === groupId ||
-        (snapped &&
-          p.groupId ===
-            newPieces.find((np) => np.groupId === groupId)?.groupId),
+      (p) => p.groupId === finalGroupId,
     );
-    const inactivePieces = newPieces.filter(
-      (p) => !activeGroupPieces.includes(p),
-    );
+    const inactivePieces = newPieces.filter((p) => p.groupId !== finalGroupId);
     newPieces = [...inactivePieces, ...activeGroupPieces];
 
     setPieces(newPieces);
-
     if (onChange) onChange(newPieces);
 
     if (snapped) {
-      const firstGroupId = newPieces[0].groupId;
-      if (newPieces.every((p) => p.groupId === firstGroupId)) {
+      if (newPieces.every((p) => p.groupId === finalGroupId)) {
         confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
         onComplete();
       }
