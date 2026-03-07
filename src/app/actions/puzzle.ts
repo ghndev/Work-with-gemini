@@ -4,7 +4,7 @@ import { auth } from '@/auth';
 import { db } from '@/db';
 import { userPuzzles } from '@/db/schema';
 import { GoogleGenAI } from '@google/genai';
-import { puzzleRateLimit } from '@/utils/rateLimit';
+import { puzzleRateLimit, actionRateLimit } from '@/utils/rateLimit';
 import { eq, and } from 'drizzle-orm';
 
 const MAX_PROMPT_LENGTH = 500;
@@ -120,6 +120,17 @@ export async function completePuzzle(puzzleRecordId: string) {
     return { success: false, error: 'Authentication required' };
   }
 
+  const { success: isAllowed } = await actionRateLimit.limit(
+    `action_${session.user.id}`,
+  );
+
+  if (!isAllowed) {
+    return {
+      success: false,
+      error: 'Too many requests. Please try again later.',
+    };
+  }
+
   try {
     const puzzle = await db.query.userPuzzles.findFirst({
       where: and(
@@ -183,6 +194,17 @@ export async function abandonPuzzle(puzzleRecordId: string) {
 
   if (!session?.user?.id) {
     return { success: false, error: 'Authentication required' };
+  }
+
+  const { success: isAllowed } = await actionRateLimit.limit(
+    `action_${session.user.id}`,
+  );
+
+  if (!isAllowed) {
+    return {
+      success: false,
+      error: 'Too many requests. Please try again later.',
+    };
   }
 
   try {
