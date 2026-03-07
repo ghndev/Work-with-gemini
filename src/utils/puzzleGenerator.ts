@@ -27,6 +27,7 @@ export interface PuzzleState {
   imageUrl: string;
   cols: number;
   rows: number;
+  puzzleRecordId?: string;
   hConnections: Edge[][];
   vConnections: Edge[][];
   pieces: {
@@ -100,6 +101,7 @@ export async function createPuzzleState(
   imageUrl: string,
   cols: number,
   rows: number,
+  puzzleRecordId?: string,
 ): Promise<PuzzleState> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -165,6 +167,7 @@ export async function createPuzzleState(
           imageUrl,
           cols,
           rows,
+          puzzleRecordId,
           hConnections,
           vConnections,
           pieces,
@@ -173,7 +176,8 @@ export async function createPuzzleState(
         reject(err);
       }
     };
-    img.onerror = () => reject(new Error('Failed to load image for state creation'));
+    img.onerror = () =>
+      reject(new Error('Failed to load image for state creation'));
     img.src = imageUrl;
   });
 }
@@ -281,7 +285,8 @@ export async function renderPuzzlePieces(
         reject(err);
       }
     };
-    img.onerror = () => reject(new Error('Failed to load image for rendering puzzle pieces'));
+    img.onerror = () =>
+      reject(new Error('Failed to load image for rendering puzzle pieces'));
     img.src = state.imageUrl;
   });
 }

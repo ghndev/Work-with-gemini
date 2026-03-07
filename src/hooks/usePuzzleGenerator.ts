@@ -22,6 +22,7 @@ export function usePuzzleGenerator(
   const createPuzzleFromImage = async (
     imageUrl: string,
     difficulty: Difficulty,
+    puzzleRecordId?: string,
   ) => {
     const { pieces } = DIFFICULTY_SETTINGS[difficulty];
     const { cols: computedCols, rows: computedRows } = await calculateGrid(
@@ -33,6 +34,7 @@ export function usePuzzleGenerator(
       imageUrl,
       computedCols,
       computedRows,
+      puzzleRecordId,
     );
     const renderedPieces = await renderPuzzlePieces(newState);
 
@@ -63,7 +65,11 @@ export function usePuzzleGenerator(
         };
       }
 
-      await createPuzzleFromImage(result.imageUrl, difficulty);
+      await createPuzzleFromImage(
+        result.imageUrl,
+        difficulty,
+        result.puzzleRecordId,
+      );
       return { error: null, success: true };
     } catch (err: unknown) {
       console.error('Error in generateAI:', err);

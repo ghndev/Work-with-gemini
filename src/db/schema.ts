@@ -59,3 +59,18 @@ export const verificationTokens = pgTable(
   (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })],
 );
 
+export const userPuzzles = pgTable('userPuzzle', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text('userId')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  prompt: text('prompt').notNull(),
+  imageUrl: text('imageUrl').notNull(),
+  difficulty: text('difficulty').notNull(), // 'easy' or 'hard'
+  status: text('status').default('playing').notNull(), // 'playing' | 'completed'
+  startedAt: timestamp('startedAt', { mode: 'date' }).defaultNow().notNull(),
+  completedAt: timestamp('completedAt', { mode: 'date' }),
+  timeTaken: integer('timeTaken'), // seconds
+});

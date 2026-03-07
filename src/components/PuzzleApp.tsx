@@ -11,6 +11,7 @@ import {
 import dynamic from 'next/dynamic';
 import { usePuzzleState } from '@/hooks/usePuzzleState';
 import { usePuzzleGenerator } from '@/hooks/usePuzzleGenerator';
+import { completePuzzle } from '@/app/actions/puzzle';
 import { PresetGallery } from './PresetGallery';
 import {
   Difficulty,
@@ -31,6 +32,7 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
 
   const {
     pieces,
+    puzzleState,
     puzzleId,
     showPuzzle,
     setShowPuzzle,
@@ -69,6 +71,22 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
 
   const isPending = isAIPending || isPresetPending;
 
+  const handleComplete = async () => {
+    if (puzzleState?.puzzleRecordId) {
+      try {
+        const result = await completePuzzle(puzzleState.puzzleRecordId);
+        if (!result.success) {
+          console.warn('Failed to save puzzle score:', result.error);
+        } else {
+          console.log('Puzzle completed in', result.timeTaken, 'seconds');
+        }
+      } catch (err) {
+        console.error('Error completing puzzle:', err);
+      }
+    }
+    clearSave();
+  };
+
   return (
     <>
       <PresetGallery
@@ -85,7 +103,7 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
             key={puzzleId}
             initialPieces={pieces}
             onChange={updatePieces}
-            onComplete={clearSave}
+            onComplete={handleComplete}
           />
         )}
         <button
