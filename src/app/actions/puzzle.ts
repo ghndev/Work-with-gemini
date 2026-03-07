@@ -13,7 +13,7 @@ const VALID_ASPECT_RATIOS = ['1:1', '16:9', '9:16'] as const;
 export async function generatePuzzleImage(
   prompt: string,
   aspectRatio: string = '1:1',
-  isHardMode: boolean = false,
+  difficulty: 'easy' | 'medium' | 'hard' = 'easy',
 ) {
   const session = await auth();
 
@@ -64,7 +64,7 @@ export async function generatePuzzleImage(
         responseModalities: ['IMAGE'],
         imageConfig: {
           aspectRatio,
-          ...(isHardMode ? { imageSize: '2K' } : {}),
+          ...(difficulty === 'hard' ? { imageSize: '2K' } : {}),
         },
       },
     });
@@ -90,7 +90,7 @@ export async function generatePuzzleImage(
           userId: session.user.id,
           prompt: trimmed,
           imageUrl,
-          difficulty: isHardMode ? 'hard' : 'easy',
+          difficulty,
           status: 'playing',
         })
         .returning({ id: userPuzzles.id });
@@ -145,14 +145,14 @@ export async function completePuzzle(puzzleRecordId: string) {
       minTime = 10;
     } else if (puzzle.difficulty === 'hard') {
       minTime = 120;
-    } else {
+    } else if (puzzle.difficulty === 'medium') {
       minTime = 30;
     }
 
     if (timeTaken < minTime) {
       return {
         success: false,
-        error: `Abuse detected: Time taken (${timeTaken}s) is too short for ${puzzle.difficulty} difficulty. Required minimum is ${minTime}s.`,
+        error: `Abuse detected: Time taken (${timeTaken}s) is too short for ${puzzle.difficulty} difficulty.`,
       };
     }
 

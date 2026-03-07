@@ -68,7 +68,7 @@ export const userPuzzles = pgTable('userPuzzle', {
     .references(() => users.id, { onDelete: 'cascade' }),
   prompt: text('prompt').notNull(),
   imageUrl: text('imageUrl').notNull(),
-  difficulty: text('difficulty').notNull(), // 'easy' or 'hard'
+  difficulty: text('difficulty').notNull(), // 'easy' | 'medium' | 'hard'
   status: text('status').default('playing').notNull(), // 'playing' | 'completed'
   startedAt: timestamp('startedAt', { mode: 'date' }).defaultNow().notNull(),
   completedAt: timestamp('completedAt', { mode: 'date' }),

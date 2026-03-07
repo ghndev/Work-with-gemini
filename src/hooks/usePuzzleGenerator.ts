@@ -52,11 +52,7 @@ export function usePuzzleGenerator(
     if (!prompt) return { error: 'Prompt is required', success: false };
 
     try {
-      const result = await generatePuzzleImage(
-        prompt,
-        aspectRatio,
-        difficulty === 'hard',
-      );
+      const result = await generatePuzzleImage(prompt, aspectRatio, difficulty);
 
       if (!result.success || !result.imageUrl) {
         return {
