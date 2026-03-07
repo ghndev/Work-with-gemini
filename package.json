@@ -17,6 +17,8 @@
     "@google/genai": "^1.29.0",
     "@neondatabase/serverless": "^1.0.2",
     "@tailwindcss/postcss": "^4.2.1",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.3",
     "canvas-confetti": "^1.9.4",
     "drizzle-orm": "^0.45.1",
     "idb-keyval": "^6.2.2",

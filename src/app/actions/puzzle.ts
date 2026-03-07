@@ -2,6 +2,7 @@
 
 import { auth } from '@/auth';
 import { GoogleGenAI } from '@google/genai';
+import { puzzleRateLimit } from '@/utils/rateLimit';
 
 const MAX_PROMPT_LENGTH = 500;
 const VALID_ASPECT_RATIOS = ['1:1', '16:9', '9:16'] as const;
@@ -15,6 +16,22 @@ export async function generatePuzzleImage(
 
   if (!session?.user) {
     return { success: false, error: 'Authentication required' };
+  }
+
+  const identifier = session.user.id || session.user.email || 'anonymous';
+  const { success: isAllowed, reset } = await puzzleRateLimit.limit(
+    `puzzle_${identifier}`,
+  );
+
+  if (!isAllowed) {
+    const resetMinutes = Math.max(
+      1,
+      Math.ceil((reset - Date.now()) / 1000 / 60),
+    );
+    return {
+      success: false,
+      error: `Too many requests. Please try again in ${resetMinutes} minute(s).`,
+    };
   }
 
   const trimmed = prompt.trim();
