@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { get, set, del } from 'idb-keyval';
+import { abandonPuzzle } from '@/app/actions/puzzle';
 import {
   PieceData,
   PuzzleState,
@@ -89,6 +90,9 @@ export function usePuzzleState() {
 
   const giveUp = async () => {
     try {
+      if (puzzleState?.puzzleRecordId) {
+        abandonPuzzle(puzzleState.puzzleRecordId).catch(console.error);
+      }
       await del('savedPuzzle');
     } catch (e) {
       console.error('Error deleting saved puzzle:', e);

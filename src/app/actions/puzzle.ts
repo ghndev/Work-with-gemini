@@ -177,3 +177,46 @@ export async function completePuzzle(puzzleRecordId: string) {
     };
   }
 }
+
+export async function abandonPuzzle(puzzleRecordId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: 'Authentication required' };
+  }
+
+  try {
+    const puzzle = await db.query.userPuzzles.findFirst({
+      where: and(
+        eq(userPuzzles.id, puzzleRecordId),
+        eq(userPuzzles.userId, session.user.id),
+      ),
+    });
+
+    if (!puzzle) {
+      return { success: false, error: 'Puzzle not found' };
+    }
+
+    if (puzzle.status !== 'playing') {
+      return {
+        success: false,
+        error: 'Puzzle cannot be abandoned from current state',
+      };
+    }
+
+    await db
+      .update(userPuzzles)
+      .set({
+        status: 'abandoned',
+      })
+      .where(eq(userPuzzles.id, puzzleRecordId));
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error('Error abandoning puzzle:', error);
+    return {
+      success: false,
+      error: 'An error occurred while abandoning the puzzle.',
+    };
+  }
+}
