@@ -1,4 +1,5 @@
 let audioCtx: AudioContext | null = null;
+
 function getAudioCtx() {
   if (!audioCtx && typeof window !== 'undefined') {
     const AudioContextClass =
@@ -12,7 +13,6 @@ function getAudioCtx() {
   return audioCtx;
 }
 
-// Check local storage for saved preference on mount
 let isMuted = false;
 if (typeof window !== 'undefined') {
   isMuted = localStorage.getItem('puzzle_muted') === 'true';
@@ -31,7 +31,7 @@ export function setMuted(muted: boolean) {
       if (ctx && ctx.state === 'suspended') {
         ctx.resume().catch(() => {});
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
   }
@@ -51,7 +51,7 @@ if (typeof window !== 'undefined') {
       if (ctx && ctx.state === 'suspended') {
         ctx.resume().catch(() => {});
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
     window.removeEventListener('pointerdown', unlockAudio);
@@ -62,14 +62,6 @@ if (typeof window !== 'undefined') {
   window.addEventListener('keydown', unlockAudio, { once: true });
 }
 
-/**
- * Core function to generate Web Audio API sounds
- * @param type Shape of the sound wave (sine, square, sawtooth, triangle)
- * @param startFreq Starting frequency in Hz
- * @param endFreq Ending frequency in Hz
- * @param duration Length of the sound in seconds
- * @param maxGain Volume level (0.0 to 1.0)
- */
 function playSound(
   type: OscillatorType,
   startFreq: number,
