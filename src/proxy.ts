@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { authRateLimit } from '@/utils/rateLimit';
 
-export default async function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   if (
     request.nextUrl.pathname.startsWith('/api/auth') ||
     request.nextUrl.pathname === '/login'

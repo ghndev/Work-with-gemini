@@ -1,11 +1,19 @@
 import { useState, useRef, useSyncExternalStore } from 'react';
-import { Stage, Layer, Image as KonvaImage, Group } from 'react-konva';
+import {
+  Stage,
+  Layer,
+  Image as KonvaImage,
+  Group,
+  useStrictMode as setKonvaStrictMode,
+} from 'react-konva';
 import Konva from 'konva';
 import { PieceData } from '@/utils/puzzleGenerator';
 import { playClick, getMuted, setMuted } from '@/utils/audio';
 import { usePuzzleZoom } from '@/hooks/usePuzzleZoom';
 import { usePuzzleDrag } from '@/hooks/usePuzzleDrag';
 import { PuzzleControls } from './PuzzleControls';
+
+setKonvaStrictMode(true);
 
 interface PuzzleBoardProps {
   initialPieces: PieceData[];
