@@ -23,10 +23,43 @@ export function setMuted(muted: boolean) {
   if (typeof window !== 'undefined') {
     localStorage.setItem('puzzle_muted', String(muted));
   }
+
+  // Warm up the audio context immediately when unmuted
+  if (!muted) {
+    try {
+      const ctx = getAudioCtx();
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
 }
 
 export function getMuted() {
   return isMuted;
+}
+
+// Warm up AudioContext on the first user interaction to prevent lag
+// during the first drag (creating AudioContext is an expensive operation).
+if (typeof window !== 'undefined') {
+  const unlockAudio = () => {
+    if (isMuted) return;
+    try {
+      const ctx = getAudioCtx();
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+    } catch (e) {
+      // ignore
+    }
+    window.removeEventListener('pointerdown', unlockAudio);
+    window.removeEventListener('keydown', unlockAudio);
+  };
+
+  window.addEventListener('pointerdown', unlockAudio, { once: true });
+  window.addEventListener('keydown', unlockAudio, { once: true });
 }
 
 /**
@@ -49,7 +82,7 @@ function playSound(
   try {
     const ctx = getAudioCtx();
     if (!ctx) return;
-    
+
     if (ctx.state === 'suspended') {
       ctx.resume().catch((e) => console.warn('Audio resume blocked:', e));
     }
