@@ -156,7 +156,7 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
         <div className="w-full max-w-md space-y-8">
           <div className="space-y-2 text-center">
             <h1 className="font-serif text-4xl tracking-tight text-white">
-              Aura Puzzles
+              Aura Puzzle
             </h1>
             <p className="text-zinc-400">
               Generate a beautiful, borderless puzzle
