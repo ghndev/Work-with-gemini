@@ -4,8 +4,12 @@ import {
   integer,
   timestamp,
   primaryKey,
+  pgEnum,
 } from 'drizzle-orm/pg-core';
 import type { AdapterAccountType } from 'next-auth/adapters';
+
+export const difficultyEnum = pgEnum('difficulty', ['easy', 'medium', 'hard']);
+export const statusEnum = pgEnum('status', ['playing', 'completed']);
 
 export const users = pgTable('user', {
   id: text('id')
@@ -68,8 +72,8 @@ export const userPuzzles = pgTable('userPuzzle', {
     .references(() => users.id, { onDelete: 'cascade' }),
   prompt: text('prompt').notNull(),
   imageUrl: text('imageUrl').notNull(),
-  difficulty: text('difficulty').notNull(), // 'easy' | 'medium' | 'hard'
-  status: text('status').default('playing').notNull(), // 'playing' | 'completed'
+  difficulty: difficultyEnum('difficulty').notNull(),
+  status: statusEnum('status').default('playing').notNull(),
   startedAt: timestamp('startedAt', { mode: 'date' }).defaultNow().notNull(),
   completedAt: timestamp('completedAt', { mode: 'date' }),
   timeTaken: integer('timeTaken'), // seconds
