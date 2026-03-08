@@ -30,8 +30,6 @@ export default function PuzzleBoard({
   const [showBorderOnly, setShowBorderOnly] = useState(false);
   const [isMuted, setIsMutedState] = useState(getMuted());
 
-  const [isDraggingBoard, setIsDraggingBoard] = useState(false);
-
   // React Compiler automatically memoizes these calculations. Use simple variables instead of useState for static values.
   const maxRow = Math.max(...initialPieces.map((p) => p.row));
   const maxCol = Math.max(...initialPieces.map((p) => p.col));
@@ -196,9 +194,7 @@ export default function PuzzleBoard({
   return (
     <div
       ref={containerRef}
-      className={`relative h-full w-full touch-none overflow-hidden bg-zinc-950 ${
-        isDraggingBoard ? 'cursor-grabbing' : 'cursor-default'
-      }`}
+      className="relative h-full w-full cursor-default touch-none overflow-hidden bg-zinc-950"
     >
       <Stage
         width={dimensions.width}
@@ -209,10 +205,20 @@ export default function PuzzleBoard({
         draggable
         ref={stageRef}
         onDragStart={(e) => {
-          if (e.target === stageRef.current) setIsDraggingBoard(true);
+          if (e.target === stageRef.current && containerRef.current) {
+            containerRef.current.classList.replace(
+              'cursor-default',
+              'cursor-grabbing',
+            );
+          }
         }}
         onDragEnd={(e) => {
-          if (e.target === stageRef.current) setIsDraggingBoard(false);
+          if (e.target === stageRef.current && containerRef.current) {
+            containerRef.current.classList.replace(
+              'cursor-grabbing',
+              'cursor-default',
+            );
+          }
         }}
       >
         <Layer>
