@@ -8,7 +8,6 @@ import {
   GalleryHorizontalEnd,
   Settings2,
 } from 'lucide-react';
-import dynamic from 'next/dynamic';
 import { usePuzzleState } from '@/hooks/usePuzzleState';
 import { usePuzzleGenerator } from '@/hooks/usePuzzleGenerator';
 import { completePuzzle } from '@/app/actions/puzzle';
@@ -19,8 +18,7 @@ import {
   getEstimatedPieceCount,
 } from '@/constants/puzzle';
 import { SubmitButton } from './SubmitButton';
-
-const PuzzleBoard = dynamic(() => import('./PuzzleBoard'), { ssr: false });
+import PuzzleBoard from './PuzzleBoard';
 
 export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');

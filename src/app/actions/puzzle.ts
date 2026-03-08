@@ -5,7 +5,7 @@ import { db } from '@/db';
 import { userPuzzles } from '@/db/schema';
 import { GoogleGenAI } from '@google/genai';
 import { puzzleRateLimit, actionRateLimit } from '@/utils/rateLimit';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 const MAX_PROMPT_LENGTH = 500;
 const VALID_ASPECT_RATIOS = ['1:1', '16:9', '9:16'] as const;
@@ -133,10 +133,11 @@ export async function completePuzzle(puzzleRecordId: string) {
 
   try {
     const puzzle = await db.query.userPuzzles.findFirst({
-      where: and(
-        eq(userPuzzles.id, puzzleRecordId),
-        eq(userPuzzles.userId, session.user.id),
-      ),
+      where: (userPuzzles, { eq, and }) =>
+        and(
+          eq(userPuzzles.id, puzzleRecordId),
+          eq(userPuzzles.userId, session.user!.id!),
+        ),
     });
 
     if (!puzzle) {
@@ -209,10 +210,11 @@ export async function abandonPuzzle(puzzleRecordId: string) {
 
   try {
     const puzzle = await db.query.userPuzzles.findFirst({
-      where: and(
-        eq(userPuzzles.id, puzzleRecordId),
-        eq(userPuzzles.userId, session.user.id),
-      ),
+      where: (userPuzzles, { eq, and }) =>
+        and(
+          eq(userPuzzles.id, puzzleRecordId),
+          eq(userPuzzles.userId, session.user!.id!),
+        ),
     });
 
     if (!puzzle) {
