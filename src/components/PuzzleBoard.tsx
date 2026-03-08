@@ -194,7 +194,8 @@ export default function PuzzleBoard({
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full cursor-default touch-none overflow-hidden bg-zinc-950"
+      className="relative h-full w-full touch-none overflow-hidden bg-zinc-950"
+      style={{ cursor: 'default' }}
     >
       <Stage
         width={dimensions.width}
@@ -206,18 +207,12 @@ export default function PuzzleBoard({
         ref={stageRef}
         onDragStart={(e) => {
           if (e.target === stageRef.current && containerRef.current) {
-            containerRef.current.classList.replace(
-              'cursor-default',
-              'cursor-grabbing',
-            );
+            containerRef.current.style.cursor = 'grabbing';
           }
         }}
         onDragEnd={(e) => {
           if (e.target === stageRef.current && containerRef.current) {
-            containerRef.current.classList.replace(
-              'cursor-grabbing',
-              'cursor-default',
-            );
+            containerRef.current.style.cursor = 'default';
           }
         }}
       >
