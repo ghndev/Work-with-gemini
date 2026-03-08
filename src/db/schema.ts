@@ -9,7 +9,11 @@ import {
 import type { AdapterAccountType } from 'next-auth/adapters';
 
 export const difficultyEnum = pgEnum('difficulty', ['easy', 'medium', 'hard']);
-export const statusEnum = pgEnum('status', ['playing', 'completed']);
+export const statusEnum = pgEnum('status', [
+  'playing',
+  'completed',
+  'abandoned',
+]);
 
 export const users = pgTable('user', {
   id: text('id')

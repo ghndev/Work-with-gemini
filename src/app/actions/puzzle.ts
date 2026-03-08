@@ -6,6 +6,7 @@ import { userPuzzles } from '@/db/schema';
 import { GoogleGenAI } from '@google/genai';
 import { puzzleRateLimit, actionRateLimit } from '@/utils/rateLimit';
 import { eq } from 'drizzle-orm';
+import { put } from '@vercel/blob';
 
 const MAX_PROMPT_LENGTH = 500;
 const VALID_ASPECT_RATIOS = ['1:1', '16:9', '9:16'] as const;
@@ -73,14 +74,22 @@ export async function generatePuzzleImage(
       (part) => part.inlineData,
     )?.inlineData;
 
-    if (!inlineData) {
+    if (!inlineData || !inlineData.data) {
       return {
         success: false,
         error: 'Failed to generate image (maybe copyright issue)',
       };
     }
 
-    const imageUrl = `data:${inlineData.mimeType};base64,${inlineData.data}`;
+    const imageBuffer = Buffer.from(inlineData.data, 'base64');
+    const filename = `puzzles/${session.user.id || 'anonymous'}-${Date.now()}.jpg`;
+
+    const blob = await put(filename, imageBuffer, {
+      access: 'public',
+      contentType: inlineData.mimeType,
+    });
+
+    const imageUrl = blob.url;
     let puzzleRecordId: string | undefined;
 
     if (session.user.id) {
