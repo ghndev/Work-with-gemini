@@ -7,7 +7,7 @@ import { GoogleGenAI } from '@google/genai';
 import { puzzleRateLimit, actionRateLimit } from '@/utils/rateLimit';
 import { eq, and } from 'drizzle-orm';
 import { put } from '@vercel/blob';
-import { revalidatePath } from 'next/cache';
+import { updateTag } from 'next/cache';
 
 const MAX_PROMPT_LENGTH = 500;
 const VALID_ASPECT_RATIOS = ['1:1', '16:9', '9:16'] as const;
@@ -108,7 +108,7 @@ export async function generatePuzzleImage(
       puzzleRecordId = newPuzzle?.id;
     }
 
-    revalidatePath('/');
+    updateTag('user-puzzles');
 
     return {
       success: true,
@@ -194,7 +194,7 @@ export async function completePuzzle(puzzleRecordId: string) {
         ),
       );
 
-    revalidatePath('/');
+    updateTag('user-puzzles');
 
     return {
       success: true,
@@ -259,7 +259,7 @@ export async function abandonPuzzle(puzzleRecordId: string) {
         ),
       );
 
-    revalidatePath('/');
+    updateTag('user-puzzles');
 
     return { success: true };
   } catch (error: unknown) {
