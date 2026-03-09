@@ -82,7 +82,7 @@ export async function generatePuzzleImage(
     }
 
     const imageBuffer = Buffer.from(inlineData.data, 'base64');
-    const filename = `puzzles/${session.user.id || 'anonymous'}-${Date.now()}.jpg`;
+    const filename = `puzzles/${session.user.id || 'anonymous'}.jpg`;
 
     const blob = await put(filename, imageBuffer, {
       access: 'public',
