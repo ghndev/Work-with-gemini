@@ -284,16 +284,12 @@ export default function PuzzleApp({ isLoggedIn }: { isLoggedIn?: boolean }) {
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <SubmitButton
-                disabled={!isLoggedIn || isPending}
+                disabled={!isLoggedIn}
                 className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-zinc-100 py-4 font-medium text-zinc-900 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                 pendingText="Generating..."
               >
-                {!isPending && (
-                  <>
-                    <Sparkles className="h-5 w-5" />
-                    {pieces ? 'New Puzzle' : 'Create AI Puzzle'}
-                  </>
-                )}
+                <Sparkles className="h-5 w-5" />
+                {pieces ? 'New Puzzle' : 'Create AI Puzzle'}
               </SubmitButton>
 
               {pieces && (
