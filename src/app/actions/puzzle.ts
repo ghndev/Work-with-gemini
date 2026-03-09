@@ -5,8 +5,9 @@ import { db } from '@/db';
 import { userPuzzles } from '@/db/schema';
 import { GoogleGenAI } from '@google/genai';
 import { puzzleRateLimit, actionRateLimit } from '@/utils/rateLimit';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { put } from '@vercel/blob';
+import { revalidatePath } from 'next/cache';
 
 const MAX_PROMPT_LENGTH = 500;
 const VALID_ASPECT_RATIOS = ['1:1', '16:9', '9:16'] as const;
@@ -107,6 +108,8 @@ export async function generatePuzzleImage(
       puzzleRecordId = newPuzzle?.id;
     }
 
+    revalidatePath('/');
+
     return {
       success: true,
       imageUrl,
@@ -184,7 +187,14 @@ export async function completePuzzle(puzzleRecordId: string) {
         completedAt: now,
         timeTaken,
       })
-      .where(eq(userPuzzles.id, puzzleRecordId));
+      .where(
+        and(
+          eq(userPuzzles.id, puzzleRecordId),
+          eq(userPuzzles.userId, session.user!.id!),
+        ),
+      );
+
+    revalidatePath('/');
 
     return {
       success: true,
@@ -242,7 +252,14 @@ export async function abandonPuzzle(puzzleRecordId: string) {
       .set({
         status: 'abandoned',
       })
-      .where(eq(userPuzzles.id, puzzleRecordId));
+      .where(
+        and(
+          eq(userPuzzles.id, puzzleRecordId),
+          eq(userPuzzles.userId, session.user!.id!),
+        ),
+      );
+
+    revalidatePath('/');
 
     return { success: true };
   } catch (error: unknown) {
